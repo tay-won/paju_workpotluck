@@ -91,6 +91,7 @@ aside.sidebar{
 .basket-box .cat-row{margin-bottom:7px;}
 .basket-box select{width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:#FBFAF7;font-size:11px;}
 .cat-label{font:700 9.5px var(--mono);color:var(--navy);text-transform:uppercase;letter-spacing:.02em;margin-bottom:5px;}
+.cat-target-hint{font-size:9.5px;color:var(--accent);margin-top:4px;font-weight:600;}
 .file-group-label{font-size:9.5px;font-weight:800;color:var(--navy);text-transform:uppercase;letter-spacing:.02em;padding:5px 2px 3px;}
 .file-row{
   display:flex;justify-content:space-between;align-items:center;gap:6px;
@@ -396,6 +397,7 @@ pre.doc-body{white-space:pre-wrap;word-break:keep-all;font-family:var(--sans);fo
             <div class="cat-row" id="catRow">
               <div class="cat-label">업무 바구니 선택</div>
               <select id="fileCategory"></select>
+              <div class="cat-target-hint" id="catTargetHint"></div>
             </div>
             <input type="file" id="fileInput" multiple>
             <div class="mask-note" id="maskNote">⚠ 개인정보(연락처 등)로 추정되는 항목이 감지되어 자동으로 마스킹(●●●●) 처리했습니다.</div>
@@ -863,30 +865,51 @@ function flattenTreeEntries(nodes, depth, out){
   out = out || [];
   depth = depth || 0;
   nodes.forEach(n=>{
-    out.push({name:n.name, depth});
+    out.push({id:n.id, name:n.name, depth});
     if(n.children && n.children.length) flattenTreeEntries(n.children, depth+1, out);
   });
   return out;
 }
+let lastFileCategoryId = null; /* 마지막으로 실제 선택되어 있던 유효한 세부사업/기타업무 카테고리의 노드ID (이름이 아닌 ID로 관리해
+  동일/유사 이름·재렌더링에도 항상 정확히 같은 폴더를 가리키도록 함) */
+function updateCatTargetHint(entries){
+  const hint = document.getElementById('catTargetHint');
+  if(!hint) return;
+  const found = entries.find(e=>e.id===lastFileCategoryId);
+  hint.textContent = found ? `📌 지금 올리는 자료는 「${found.name}」에 담깁니다` : '';
+}
 function refreshFileCategoryOptions(){
   const entries = flattenTreeEntries(budgetTree).concat(flattenTreeEntries(otherWorkList));
   const sel = document.getElementById('fileCategory');
-  const currentLabel = findNodeInfo(state.selectedNodeId).label;
+  const ids = entries.map(e=>e.id);
+  const currentNode = findNode(budgetTree, state.selectedNodeId) || findNode(otherWorkList, state.selectedNodeId);
+  /* 상단 'AI 업무 협업 범위' 탭(파주시 전체/농업기술센터 등)처럼 트리 카테고리가 아닌 곳으로 이동했을 때는
+     드롭다운을 조용히 목록 맨 위 항목으로 바꾸지 않고, 마지막으로 선택돼 있던 유효한 카테고리를 그대로 유지한다.
+     (이전 버그: 조직도 탭 이동 후 업로드하면 엉뚱한 첫번째 카테고리로 파일이 들어갔음) */
+  if(currentNode && ids.includes(currentNode.id)){
+    lastFileCategoryId = currentNode.id;
+  } else if(!lastFileCategoryId || !ids.includes(lastFileCategoryId)){
+    lastFileCategoryId = ids[0] || null;
+  }
   sel.innerHTML = entries.map(e=>{
     const indent = e.depth>0 ? '　'.repeat(e.depth) + '└ ' : '';
-    return `<option value="${e.name}">${indent}${e.name}</option>`;
+    return `<option value="${e.id}">${indent}${e.name}</option>`;
   }).join('');
-  const names = entries.map(e=>e.name);
-  /* 항상 현재 좌측에서 선택 중인 노드(세부사업/폴더)를 기본값으로 맞춤 — 다른 카테고리를 고른 채로 방치되어
-     엉뚱한 곳에 파일이 담기는 문제 방지 */
-  if(names.includes(currentLabel)) sel.value = currentLabel;
-  else if(names.length) sel.value = names[0];
+  if(lastFileCategoryId) sel.value = lastFileCategoryId;
+  updateCatTargetHint(entries);
 }
+document.getElementById('fileCategory').addEventListener('change', (e)=>{
+  lastFileCategoryId = e.target.value; /* 드롭다운을 수동으로 바꾼 경우에도 그 선택을 기억 */
+  const entries = flattenTreeEntries(budgetTree).concat(flattenTreeEntries(otherWorkList));
+  updateCatTargetHint(entries);
+});
 
 document.getElementById('fileInput').addEventListener('change', (e)=>{
   const files = Array.from(e.target.files);
   const catSel = document.getElementById('fileCategory');
-  const category = catSel.value || null;
+  const categoryId = catSel.value || null;
+  const categoryNode = categoryId ? (findNode(budgetTree, categoryId) || findNode(otherWorkList, categoryId)) : null;
+  const category = categoryNode ? categoryNode.name : null; /* 표시용 이름 (매칭에는 categoryId를 사용) */
   const bureau = state.reg.unit || '';
   const dept = state.reg.dept || '';
   const team = state.reg.team || '';
@@ -895,13 +918,13 @@ document.getElementById('fileInput').addEventListener('change', (e)=>{
     if(isText){
       const reader = new FileReader();
       reader.onload = ()=>{
-        uploadedFiles.push({name:file.name, content:reader.result, isText:true, category, bureau, dept, team});
+        uploadedFiles.push({name:file.name, content:reader.result, isText:true, category, categoryId, bureau, dept, team});
         checkMasking();
         refreshTreeAccordions();
       };
       reader.readAsText(file, 'UTF-8');
     } else {
-      uploadedFiles.push({name:file.name, content:'', isText:false, category, bureau, dept, team});
+      uploadedFiles.push({name:file.name, content:'', isText:false, category, categoryId, bureau, dept, team});
       refreshTreeAccordions();
     }
   });
@@ -919,7 +942,8 @@ function fileMatchesScope(f, scope){
   if(scope.startsWith('TEAM:'))   return f.team   === scope.slice(5);
   if(scope.startsWith('DEPT:'))   return f.dept   === scope.slice(5);
   if(scope.startsWith('BUREAU:')) return f.bureau === scope.slice(7);
-  return f.category === scope;
+  if(scope.startsWith('NODE:'))   return f.categoryId === scope.slice(5);
+  return f.category === scope; /* 구버전 호환용 안전장치 */
 }
 function getAccumulatedText(scope){
   let text = '';
@@ -1204,7 +1228,7 @@ function renderAccordion(n){
       html += `<div class="acc-block"><div class="acc-label">사업 진행 현황</div><div class="acc-placeholder">💬 AI 업무비서에게 "이 사업에 대한 진행일정표(타임스케줄)를 짜주세요"라고 물어보면 여기에 자동으로 생성됩니다.</div></div>`;
     }
   }
-  const files = uploadedFiles.map((f,idx)=>({...f, idx})).filter(f=>f.category === n.name);
+  const files = uploadedFiles.map((f,idx)=>({...f, idx})).filter(f=>f.categoryId === n.id || (!f.categoryId && f.category === n.name));
   html += `<div class="acc-block"><div class="acc-label">자료 목록 (${files.length})</div>`;
   if(files.length===0){
     html += `<div class="file-empty-mini">첨부된 자료가 없습니다.</div>`;
@@ -1274,7 +1298,7 @@ function findNodeInfo(id){
   if(id.startsWith('DEPT:')) return {label:id.slice(5), scope:id};
   if(id.startsWith('TEAM:')) return {label:id.slice(5), scope:id};
   const n = findNode(budgetTree, id) || findNode(otherWorkList, id);
-  if(n) return {label:n.name, scope:n.name, budget:n.amount, status:n.status};
+  if(n) return {label:n.name, scope:'NODE:'+n.id, budget:n.amount, status:n.status};
   return {label:'파주시 전체', scope:'CITY'};
 }
 function selectScopeTab(id){
@@ -1283,12 +1307,10 @@ function selectScopeTab(id){
   renderAll();
 }
 function selectTreeNode(id, kind){
-  if(state.selectedNodeId===id && state.openAccordion===id){
-    state.openAccordion = null; // 다시 클릭하면 아코디언 닫기
-  } else {
-    state.selectedNodeId = id;
-    state.openAccordion = id;
-  }
+  /* 클릭하면 항상 해당 카테고리를 연다(이전엔 이미 열려있을 때 재클릭하면 닫혀서
+     "파일이 사라졌다"고 오해하기 쉬웠음 — 그 토글 동작 제거) */
+  state.selectedNodeId = id;
+  state.openAccordion = id;
   renderAll();
 }
 function renderAll(){
@@ -1565,24 +1587,39 @@ const SCRIPTED_QA = [
     keys: ["법제처","조례제정 현황","전국 시군구","조례 제정 현황"],
     requireAny: ["08_", "09_", "부서의견조회", "별표"],
     requireLabel: "08_[부서의견조회] 조례안, 09_[별표 2]",
+    combineGroup: 'ordinance-review',
     a: function(){
-      let body = `법제처 홈페이지에 실시간 접속하여 전국 시·군·구 조례 제정 현황을 자동으로 분석하는 것은 보안상 이 화면에서 지원되지 않습니다. 필요하신 경우 담당자께서 국가법령정보센터·자치법규정보시스템에 직접 접속해 확인해 주시기 바랍니다.
-
-대신 업로드하신 「08_[부서의견조회] 조례안」 자료를 바탕으로 조례안 개요를 정리해 드립니다.
+      let body = `법제처 홈페이지에 실시간 접속하여 전국 시·군·구 조례 제정 현황을 분석하여 업로드하신 「08_[부서의견조회] 조례안」 자료를 바탕으로 조례안 개요를 정리해 드립니다.
 
 ■ 의원발의 조례안 개요
 - 안건명 : 「파주시 노후 농기계 조기 폐기 지원 조례안」(제정) (○○○ 의원 발의, 2026. 2. 12.)
 - 제안이유 : 노후 경유 농기계로 인한 미세먼지·온실가스 배출 저감 및 안전사고 위험 완화를 위한 재정 지원 근거 마련
-- 주요내용 : 시장의 책무(안 제3조) / 연차별 지원계획 수립·시행(안 제5조) / 지원 대상 규정(안 제6조) / 보조금 지원 및 제한(안 제7·8조) / 지정 폐기업소 관리(안 제9조)
+- 주요내용 :
+  1) 미세먼지·온실가스 배출 저감 및 농업안전 강화를 위한 노후농기계 조기 폐기 지원 근거 마련(안 제1조)
+  2) 노후 농기계 지원대상 명확화 - 소유 6개월 이상(안 제2조, 제6조)
+  3) 시장책무, 연차별 지원계획 수립, 지정폐기업소 관리체계 구축(안 제3조, 제5조, 제9조)
+  4) 보조금 지급기준 및 제한사유 규정 - 농업인·법인 대상, 1인1대 원칙(안 제7조, 제8조)
 
-■ 조례 제정 타임라인 (별표2 기준)
-입법안 작성 → 초안심사(법제부서) → 입법계획수립(시장 결재) → 의견조회 및 반영 → 입법예고(20일 이상) → 본심사 → 조례·규칙심의회 심의 → 심의결과 반영 → 최종결재(시장) → 시의회 제출 → 심의·의결 → 이송·접수 → 공포 전 보고(경기도) → 공포
+■ 소관부서 검토의견(추천사항)
+검토의견 : 조례 개정 수정동의
+- 제7조 보조금 지원 등 관련 노후 농기계 조기 폐기 신청이 예산을 초과하는 경우 선정 기준이 불명확한 문제를 해결하기 위해 우선순위를 정하여 형평성 논란을 최소화하기 위한 조례 개정에 동의함
+- 농업기술센터(도시산업위원회 소관) 업무와 연계한 실효성 있는 지원체계 구축을 위한 의원발의 조례안에 동의
 
-■ 소관부서 검토의견 (00_소관부서 검토결과 반영)
-소관부서(복지정책과)는 이 조례안에 대해 "수정동의" 의견을 제시했습니다. 핵심은 제7조(보조금 지원 등)에 제⑤항을 신설해, 신청이 예산을 초과할 경우 1) 생산연도가 오래된 순, 2) 그 밖에 시장이 정하는 객관적 기준(연령·경지면적 등) 순으로 우선 지원하도록 한 부분입니다. 2025년 선정률이 26.3%에 그쳤던 점을 감안하면, 이런 우선순위 규정이 있어야 형평성 논란을 줄일 수 있다는 취지로 보입니다. 농업기술센터 업무와 연계한 실효성 있는 지원체계 구축에도 동의하는 의견입니다.
+■ 검토사항 (1개 항목)
+(의원발의안) 제7조(보조금 지원 등)
+① 시장은 제5조제2항제3호에 따른 노후농기계의 조기 폐기 지원 보조금 지급 기준에 따라 예산의 범위에서 지원할 수 있다.
+② 노후농기계 조기 폐기 지원 보조금 지급 대상은 노후농기계의 소유자로서 다음 각 호의 어느 하나에 해당하는 자로 한다.
+  1. 파주시에 주민등록을 두고 「농어업경영체 육성 및 지원에 관한 법률」에 따른 농업경영정보를 등록한 농업인
+  2. 파주시에 사무소의 소재지를 두고 「농어업경영체 육성 및 지원에 관한 법률」에 따른 농업경영정보를 등록한 농업법인
+③ 시장은 보조금의 우선순위 기준을 정하고 지원 대상을 결정할 수 있다.
+④ 보조금 지급 대상이 2대 이상의 지원 대상 노후농기계를 소유한 경우에는 1인당 1대에 한하여 보조금을 지급한다. 다만, 시장이 필요하다고 인정하는 경우 1인당 2대 이상에 대하여도 보조금을 지급할 수 있다.
 
-■ 검토사항 (5개 항목 모두 해당 없음)
-- 관련법령 위반 사항, 조례·규칙 위반 사항, 월권·공익저해 사항, 상급기관 지시불이행 사항, 그 밖의 문제점 — 5개 항목 전부 문제 없음으로 확인되었습니다.
+(부서 검토의견안) 제7조(보조금 지원 등) — ④항 다음 ⑤항 신설
+⑤ 노후 농기계 조기 폐기 신청이 예산을 초과하는 경우에는 다음 각 호의 순서에 따라 우선 지원한다.
+  1. 생산연도가 오래된 순
+  2. 그 밖에 시장이 정하는 객관적 기준(연령, 경지면적 등)
+
+(검토사유) 선정 기준이 불명확한 문제를 해결하기 위해 신청 초과 시 우선순위를 정해 형평성 논란을 최소화할 수 있음
 
 ■ 비용추계
 - 산출내역 : 2,500,000원 × 175대 = 437,500천원 (2026~2030년 5개년 합계)
@@ -1602,17 +1639,21 @@ const SCRIPTED_QA = [
 - 소관부서 : 복지정책과(맞춤형복지지원팀)
 - 검토의견 : 조례 개정 수정동의
 
-■ 검토사항 (5개 항목 모두 해당 없음)
-- 관련법령 위반 사항 : 없음
-- 조례 또는 규칙 위반 사항 : 없음
-- 월권사항 또는 공익 저해 사항 : 없음
-- 상급기관 훈령 등 지시불이행 사항 : 없음
-- 그 밖의 문제점 : 없음
+■ 검토사항 (1개 항목)
+(의원발의안) 제7조(보조금 지원 등)
+① 시장은 제5조제2항제3호에 따른 노후농기계의 조기 폐기 지원 보조금 지급 기준에 따라 예산의 범위에서 지원할 수 있다.
+② 노후농기계 조기 폐기 지원 보조금 지급 대상은 노후농기계의 소유자로서 다음 각 호의 어느 하나에 해당하는 자로 한다.
+  1. 파주시에 주민등록을 두고 「농어업경영체 육성 및 지원에 관한 법률」에 따른 농업경영정보를 등록한 농업인
+  2. 파주시에 사무소의 소재지를 두고 「농어업경영체 육성 및 지원에 관한 법률」에 따른 농업경영정보를 등록한 농업법인
+③ 시장은 보조금의 우선순위 기준을 정하고 지원 대상을 결정할 수 있다.
+④ 보조금 지급 대상이 2대 이상의 지원 대상 노후농기계를 소유한 경우에는 1인당 1대에 한하여 보조금을 지급한다. 다만, 시장이 필요하다고 인정하는 경우 1인당 2대 이상에 대하여도 보조금을 지급할 수 있다.
 
-■ 주요 수정 사항
-- 제7조(보조금 지원 등)에 제⑤항 신설
-  "노후 농기계 조기 폐기 신청이 예산을 초과하는 경우 1) 생산연도가 오래된 순, 2) 그 밖에 시장이 정하는 객관적 기준(연령, 경지면적 등) 순으로 우선 지원"
-- 사유 : 신청 초과 시 선정 기준이 불명확했던 문제(2025년 선정률 26.3%로 다수 미선정)를 해결하고 형평성 논란을 최소화하기 위함
+(부서 검토의견안) 제7조(보조금 지원 등) — ④항 다음 ⑤항 신설
+⑤ 노후 농기계 조기 폐기 신청이 예산을 초과하는 경우에는 다음 각 호의 순서에 따라 우선 지원한다.
+  1. 생산연도가 오래된 순
+  2. 그 밖에 시장이 정하는 객관적 기준(연령, 경지면적 등)
+
+(검토사유) 선정 기준이 불명확한 문제를 해결하기 위해 신청 초과 시 우선순위를 정해 형평성 논란을 최소화할 수 있음
 
 ■ 비용추계
 - 산출내역 : 2,500,000원 × 175대 = 437,500천원 (2026~2030년 5개년 합계)
@@ -1624,6 +1665,7 @@ const SCRIPTED_QA = [
     keys: ["조례 제정 타임라인","별표 2","제정·개정·폐지","제정 절차"],
     requireAny: ["09_", "별표"],
     requireLabel: "09_[별표 2] 제정·개정·폐지 세부처리절차",
+    combineGroup: 'ordinance-review',
     a: `업로드하신 「09_[별표 2] 제정·개정·폐지 세부처리절차」를 반영한 조례 제정 타임라인입니다.
 
 1. 입법안 작성 (입안부서)
@@ -1683,6 +1725,23 @@ function findScripted(q){
   });
   return bestScore > 0 ? best : null;
 }
+function findAllScripted(q){
+  const scored = SCRIPTED_QA.map(item=>{
+    const score = item.keys.reduce((s,k)=> s + (q.includes(k)?k.length:0), 0);
+    return {item, score};
+  }).filter(x=>x.score>0).sort((a,b)=>b.score-a.score);
+  if(scored.length===0) return [];
+  const top = scored[0];
+  /* 같은 combineGroup 태그를 가진 항목끼리만 "한꺼번에 질문" 병합 대상으로 인정한다.
+     (서로 무관한 항목이 우연히 겹치는 단어 하나 때문에 잘못 합쳐지는 것을 방지하기 위함.
+      예: "부서검토의견"이라는 표현이 법제처 질문과 검토의견 질문 모두에 걸쳐 나타나지만,
+      둘은 combineGroup이 다르므로 여기서는 절대 함께 묶이지 않는다.) */
+  if(top.item.combineGroup){
+    const partners = scored.filter(x => x.item.combineGroup === top.item.combineGroup && x.score >= 6);
+    if(partners.length > 1) return partners.map(x=>x.item);
+  }
+  return [top.item];
+}
 function filesReadyFor(item){
   if(!item.requireAny || item.requireAny.length === 0) return true;
   return uploadedFiles.some(f => item.requireAny.some(kw => f.name.includes(kw)));
@@ -1701,13 +1760,27 @@ function fallbackSearch(q, scope){
   return scored.slice(0,3).map(x=>'· '+x.l.replace(/^[-•○]\s*/,'')).join('\n');
 }
 
+function applyTimelineReveal(hit){
+  if(!hit.revealsTimeline) return;
+  const node = findNode(budgetTree, state.selectedNodeId) || findNode(otherWorkList, state.selectedNodeId);
+  if(!node) return;
+  if(hit.timelineKeyToAssign && !node.timelineKey){
+    node.timelineKey = hit.timelineKeyToAssign; /* 사용자가 만든 하위폴더에도 사업 진행 현황을 새로 배정 */
+  }
+  if(node.timelineKey){
+    revealedTimelines.add(node.id);
+    state.openAccordion = node.id;
+  }
+}
+
 function answerQuestion(q){
   const info = findNodeInfo(state.selectedNodeId);
   const scope = info.scope;
   const scopeLabel = info.label;
-  const hit = findScripted(q);
+  const hits = findAllScripted(q);
 
-  if(hit){
+  if(hits.length === 1){
+    const hit = hits[0];
     if(!filesReadyFor(hit)){
       return {
         text: `이 질문에 답변드리려면 관련 자료가 먼저 첨부되어야 합니다.\n\n필요 자료 : ${hit.requireLabel}\n\n좌측 '① 업무 자료 담기'에서 해당 파일을 업로드하신 뒤 다시 질문해 주세요.`,
@@ -1715,19 +1788,22 @@ function answerQuestion(q){
       };
     }
     const text = (typeof hit.a === 'function') ? hit.a() : hit.a;
-    if(hit.revealsTimeline){
-      const node = findNode(budgetTree, state.selectedNodeId) || findNode(otherWorkList, state.selectedNodeId);
-      if(node){
-        if(hit.timelineKeyToAssign && !node.timelineKey){
-          node.timelineKey = hit.timelineKeyToAssign; /* 사용자가 만든 하위폴더에도 사업 진행 현황을 새로 배정 */
-        }
-        if(node.timelineKey){
-          revealedTimelines.add(node.id);
-          state.openAccordion = node.id;
-        }
-      }
-    }
+    applyTimelineReveal(hit);
     return { text, note: `※ 사전에 준비된 답변입니다 (질문 범위: ${scopeLabel}). 실제 서비스에서는 업로드된 자료를 바탕으로 AI가 실시간 생성합니다.` };
+  }
+
+  if(hits.length > 1){
+    /* 여러 질문을 한 메시지에 한꺼번에 물어본 경우 — 각 답변을 이어서 하나의 응답으로 합친다 */
+    const parts = hits.map(hit=>{
+      if(!filesReadyFor(hit)){
+        return `▸ (자료 필요) ${hit.requireLabel}\n   이 부분은 해당 자료를 첨부하신 뒤 다시 물어봐 주시면 이어서 답변드리겠습니다.`;
+      }
+      const text = (typeof hit.a === 'function') ? hit.a() : hit.a;
+      applyTimelineReveal(hit);
+      return text;
+    });
+    const combined = parts.join('\n\n━━━━━━━━━━━━━━━━━━━━\n\n');
+    return { text: combined, note: `※ 한 번에 물어보신 ${hits.length}가지 요청을 이어서 답변드렸습니다 (질문 범위: ${scopeLabel}). 실제 서비스에서는 업로드된 자료를 바탕으로 AI가 실시간 생성합니다.` };
   }
 
   if(isExternalLinkRequest(q)){
