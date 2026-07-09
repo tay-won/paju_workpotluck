@@ -1,0 +1,1786 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WorkPotluck 워크포트락 — 파주시 AI 업무비서 (프로토타입)</title>
+<style>
+:root{
+  --navy:#1B3A5C;
+  --navy-dark:#0F2438;
+  --paper:#F6F4EE;
+  --paper-card:#FFFFFF;
+  --seal:#AB3428;
+  --ink:#26241F;
+  --ink-soft:#6B6558;
+  --line:#DAD3C2;
+  --gold:#B8912A;
+  --green:#3E7A52;
+  --accent:#C9762A;
+  --mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  --sans: "Pretendard", "Malgun Gothic", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;background:var(--paper);color:var(--ink);font-family:var(--sans);height:100%;overflow:hidden;}
+button{font-family:var(--sans);}
+::-webkit-scrollbar{width:8px;height:8px;}
+::-webkit-scrollbar-thumb{background:#D9D2BE;border-radius:6px;}
+
+/* ================= APP SHELL ================= */
+#app{display:flex;flex-direction:column;height:100vh;}
+
+/* ---------- Top bar ---------- */
+header.top{
+  flex:none;height:3px;background:linear-gradient(90deg,var(--accent),var(--gold));
+}
+.topbar{
+  flex:none;height:58px;display:flex;align-items:center;gap:14px;padding:0 20px;
+  background:linear-gradient(180deg,var(--navy) 0%, var(--navy-dark) 100%);color:#fff;
+  border-bottom:1px solid var(--navy-dark);
+}
+.tb-logo{font-weight:800;font-size:15px;letter-spacing:-.01em;white-space:nowrap;}
+.tb-logo span{color:#E7C568;}
+.tb-div{width:1px;height:20px;background:rgba(255,255,255,.2);flex:none;}
+.tb-tagline{font-size:10.5px;color:#B9C7D6;line-height:1.4;white-space:nowrap;}
+.tb-chip{
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);border-radius:8px;
+  padding:5px 10px;font-size:10.5px;color:#E4EAF0;white-space:nowrap;
+}
+.tb-spacer{flex:1;}
+.tb-user{
+  display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:5px 11px;font-size:11.5px;
+  white-space:nowrap;max-width:360px;overflow:hidden;text-overflow:ellipsis;
+}
+.tb-user b{color:#E7C568;font-weight:800;}
+.edit-btn{
+  flex:none;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.3);color:#fff;
+  border-radius:6px;padding:6px 10px;font:700 10.5px var(--sans);cursor:pointer;white-space:nowrap;
+}
+.edit-btn:hover{background:rgba(255,255,255,.2);}
+
+/* ---------- Body: sidebar / center / right ---------- */
+.body-row{flex:1;display:flex;min-height:0;}
+
+/* SIDEBAR */
+aside.sidebar{
+  width:300px;flex:none;background:#FBFAF6;border-right:1px solid var(--line);
+  display:flex;flex-direction:column;overflow:hidden;
+}
+.sb-scroll{flex:1;overflow-y:auto;padding:10px 10px 16px;}
+.sb-section{margin-bottom:14px;}
+.sb-head{
+  display:flex;align-items:center;gap:6px;justify-content:space-between;
+  font-size:10.5px;font-weight:800;color:var(--navy);letter-spacing:.03em;
+  padding:2px 3px 7px;text-transform:uppercase;
+}
+.sb-head-left{display:flex;align-items:center;gap:6px;}
+.num-badge{
+  display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;
+  border-radius:4px;background:var(--navy);color:#fff;font-size:9px;font-family:var(--mono);
+  font-weight:700;flex:none;
+}
+.sb-head-btn{font-size:9.5px;font-weight:700;color:var(--accent);cursor:pointer;background:none;border:none;padding:2px 4px;text-transform:none;letter-spacing:0;}
+
+/* 업무 자료 담기 */
+.basket-box{background:#fff;border:1px solid var(--line);border-radius:8px;padding:9px 10px;}
+.basket-box input[type=file]{
+  width:100%;padding:5px 6px;border:1px dashed var(--line);border-radius:6px;
+  background:#FBFAF7;font-size:10.5px;color:var(--ink-soft);
+}
+.basket-box .cat-row{margin-bottom:7px;}
+.basket-box select{width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:#FBFAF7;font-size:11px;}
+.cat-label{font:700 9.5px var(--mono);color:var(--navy);text-transform:uppercase;letter-spacing:.02em;margin-bottom:5px;}
+.file-group-label{font-size:9.5px;font-weight:800;color:var(--navy);text-transform:uppercase;letter-spacing:.02em;padding:5px 2px 3px;}
+.file-row{
+  display:flex;justify-content:space-between;align-items:center;gap:6px;
+  background:#F1EEE6;border-radius:6px;padding:5px 7px;margin:2px 0 4px;font-size:10.5px;
+}
+.file-row .fname{color:var(--ink);flex:1;overflow-wrap:anywhere;}
+.file-row .fname .untyped{color:#B2AA98;margin-left:3px;font-size:9px;}
+.file-row button{border:none;background:none;color:var(--seal);cursor:pointer;font-weight:700;font-size:10px;flex:none;}
+.file-empty-mini{color:#B2AA98;font-size:10px;text-align:center;padding:6px 4px;}
+.mask-note{
+  display:none;margin-top:8px;font-size:10px;background:#FDEDEA;border:1px solid #F0C6BE;
+  color:#8C3427;padding:6px 8px;border-radius:7px;
+}
+.mask-note.show{display:block;}
+
+/* 트리 노드 (담당세부사업 / 기타업무) */
+.tree-children{margin-left:2px;}
+.tree-node{
+  display:flex;align-items:center;gap:6px;padding:6px 7px;border-radius:6px;cursor:pointer;
+  font-size:12px;color:var(--ink);line-height:1.3;margin-bottom:1px;
+}
+.tree-node:hover{background:#F1EEE6;}
+.tree-node.active{background:#EAE2CB;box-shadow:inset 3px 0 0 var(--accent);font-weight:700;color:var(--navy-dark);}
+.tree-node .amt{font:600 9.5px var(--mono);color:#98a0ab;flex:none;}
+.tree-node .badge2{font-weight:700;font-size:8.5px;flex:none;padding:2px 6px;border-radius:3px;}
+.tree-node .lbl{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.tree-node .tn-add, .tree-node .tn-del{
+  flex:none;width:17px;height:17px;border-radius:4px;border:1px solid var(--line);
+  display:flex;align-items:center;justify-content:center;font-size:11px;color:#a7aeb8;
+  cursor:pointer;background:#fff;line-height:1;
+}
+.tree-node .tn-add:hover{border-color:var(--navy);color:var(--navy);}
+.tree-node .tn-del:hover{border-color:var(--seal);color:var(--seal);}
+.depth0{padding-left:7px;}
+.depth1{padding-left:22px;}
+.depth2{padding-left:37px;}
+.depth3{padding-left:52px;}
+.sb-empty-note{font-size:10px;color:#B2AA98;padding:5px 7px;line-height:1.5;}
+
+/* 아코디언 드롭 (사업진행현황 + 자료목록 — 각각 독립 스크롤되는 2단 구성) */
+.accordion-panel{
+  background:#fff;border:1px solid var(--line);border-radius:8px;margin:2px 4px 8px;overflow:hidden;
+}
+.acc-block{padding:10px 11px;max-height:150px;overflow-y:auto;}
+.acc-block + .acc-block{border-top:1px solid var(--line);}
+.acc-label{font:800 9.5px var(--mono);color:var(--navy);text-transform:uppercase;letter-spacing:.03em;margin-bottom:7px;position:sticky;top:0;background:#fff;display:flex;align-items:center;gap:6px;}
+.acc-placeholder{font-size:10.5px;color:#98a0ab;line-height:1.6;background:#FBFAF6;border:1px dashed var(--line);border-radius:6px;padding:9px 10px;}
+.acc-genned{font:700 8px var(--sans);color:#2f7a4a;background:#e2f0e8;border-radius:3px;padding:1px 6px;text-transform:none;letter-spacing:0;}
+.acc-generated{animation:accReveal .4s ease;}
+@keyframes accReveal{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:translateY(0);}}
+.pstep{display:flex;align-items:flex-start;gap:8px;}
+.pstep .dotcol{display:flex;flex-direction:column;align-items:center;flex:none;width:14px;}
+.pstep .dotc{width:10px;height:10px;border-radius:50%;flex:none;margin-top:2px;}
+.pstep .linec{width:2px;flex:1;min-height:14px;background:#e6e8ec;}
+.pstep .pbody{padding-bottom:7px;min-width:0;}
+.pstep .plabel{font-size:10.5px;font-weight:700;}
+.pstep .pdate{font-size:9.5px;color:#98a0ab;}
+
+.sb-foot{flex:none;padding:8px 12px;border-top:1px solid var(--line);font:600 9px var(--mono);color:#a7aeb8;line-height:1.5;}
+
+/* CENTER */
+main.center{flex:1;display:flex;flex-direction:column;min-width:0;background:#EFEBE0;}
+
+/* 업무 범위 탭 (고정 4개) */
+.tabbar{
+  flex:none;display:flex;align-items:stretch;gap:0;padding:0 8px;background:#E4DEC9;
+  border-bottom:1px solid var(--line);height:36px;overflow-x:auto;
+}
+.tab{
+  display:flex;align-items:center;gap:6px;padding:0 15px;font-size:11.5px;font-weight:600;
+  color:#8a8168;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;
+}
+.tab.active{color:var(--navy-dark);font-weight:800;border-bottom-color:var(--accent);background:#EFEBE0;}
+.tab-gap{width:18px;flex:none;}
+.statusdot{width:6px;height:6px;border-radius:50%;flex:none;margin-left:2px;}
+
+.agent-titlebar{
+  position:relative;flex:none;display:flex;align-items:center;justify-content:space-between;
+  padding:10px 16px;border-bottom:1px solid var(--line);background:#fff;
+}
+.agent-title{display:flex;align-items:center;gap:8px;font-weight:800;font-size:13.5px;color:var(--navy-dark);}
+.num-badge-lg{width:19px;height:19px;font-size:10px;border-radius:5px;}
+.agent-title-right{display:flex;align-items:center;gap:8px;}
+.ai-model-label{
+  font:800 11px var(--sans);color:var(--seal);background:#FDECEA;border:1px solid #F0C6BE;
+  border-radius:6px;padding:6px 10px;white-space:nowrap;
+}
+.scope-row{flex:none;display:flex;align-items:stretch;background:#E4DEC9;border-bottom:1px solid var(--line);}
+.tab-fixed-label{
+  flex:none;display:flex;align-items:center;padding:0 12px;font:800 10.5px var(--sans);
+  color:var(--navy-dark);background:#D8CFAE;border-right:1px solid var(--line);white-space:nowrap;
+}
+.featbar{
+  position:relative;flex:none;display:flex;align-items:center;gap:9px;padding:8px 16px;
+  border-bottom:1px solid var(--line);background:#fff;flex-wrap:wrap;
+}
+.feat-btn{
+  display:flex;align-items:center;gap:6px;background:#F1EEE6;border:1px solid var(--line);border-radius:6px;
+  padding:6px 11px;font:700 12.5px var(--sans);color:var(--navy-dark);cursor:pointer;white-space:nowrap;
+}
+.scope-chip{
+  font-weight:700;font-size:11px;color:var(--accent);background:#FBEFE1;border:1px solid #EAD2AE;
+  border-radius:5px;padding:5px 10px;white-space:nowrap;max-width:280px;overflow:hidden;text-overflow:ellipsis;
+}
+.scope-status{font-weight:700;font-size:10px;padding:2px 6px;border-radius:3px;}
+.feat-spacer{flex:1;}
+.model-chip{
+  display:flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--line);border-radius:6px;
+  padding:5px 10px;font:600 11.5px var(--sans);color:#3a414c;cursor:pointer;white-space:nowrap;
+}
+.model-chip .gdot{width:7px;height:7px;border-radius:50%;background:var(--green);}
+.feat-dropdown{
+  position:absolute;top:48px;right:150px;width:300px;background:#fff;border:1px solid var(--line);
+  border-radius:8px;box-shadow:0 14px 40px rgba(20,25,35,.18);padding:6px;z-index:60;display:none;
+}
+.feat-dropdown.open{display:block;}
+.feat-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:6px;cursor:pointer;}
+.feat-item:hover{background:#F6F1E4;}
+.feat-item.active{background:#FBEFE1;}
+.feat-item .ic{width:26px;height:26px;flex:none;border-radius:5px;background:#F1EEE6;display:flex;align-items:center;justify-content:center;font-size:13px;}
+.feat-item .fname{font-weight:700;font-size:12.5px;color:var(--ink);}
+.feat-item .fdesc{font-size:10.5px;color:#98a0ab;}
+.feat-item .fcheck{margin-left:auto;color:var(--accent);font-weight:800;}
+.model-dropdown{
+  position:absolute;top:48px;right:16px;width:200px;background:#fff;border:1px solid var(--line);
+  border-radius:8px;box-shadow:0 14px 40px rgba(20,25,35,.18);padding:8px;z-index:60;display:none;
+  max-height:280px;overflow-y:auto;
+}
+.model-dropdown.open{display:block;}
+.model-dropdown .mhint{font:700 9.5px var(--mono);color:#98a0ab;padding:2px 6px 7px;}
+.model-item{padding:7px 9px;border-radius:5px;font-size:11.5px;cursor:pointer;display:flex;justify-content:space-between;}
+.model-item:hover{background:#F6F1E4;}
+.model-item.sel{background:#FBEFE1;font-weight:700;color:var(--accent);}
+
+.center-scroll{flex:1;overflow-y:auto;padding:16px 20px;}
+.center-inner{max-width:760px;margin:0 auto;}
+
+.chat-scopetag{
+  align-self:center;text-align:center;font:600 10px var(--mono);color:#98a0ab;
+  background:#E4DEC9;padding:4px 11px;border-radius:4px;display:inline-block;margin:0 auto 12px;
+}
+.chat-scopetag-wrap{display:flex;justify-content:center;}
+
+.chat-log{display:flex;flex-direction:column;gap:11px;}
+.chat-msg{max-width:88%;padding:10px 13px;border-radius:11px;font-size:12.5px;line-height:1.7;white-space:pre-wrap;}
+.chat-msg.user{align-self:flex-end;background:var(--navy);color:#fff;border-bottom-right-radius:3px;}
+.chat-msg.ai{align-self:flex-start;background:#fff;border:1px solid var(--line);color:var(--ink);border-bottom-left-radius:3px;}
+.chat-msg.ai .note{display:block;margin-top:7px;font-size:10px;color:#9A927E;}
+.chat-empty{color:#B2AA98;font-size:11.5px;text-align:center;padding:30px 8px;}
+.chat-msg.thinking{display:flex;align-items:center;gap:5px;padding:13px 16px;}
+.think-dot{width:6px;height:6px;border-radius:50%;background:#B2AA98;animation:thinkBounce 1.1s infinite ease-in-out;}
+.think-dot:nth-child(2){animation-delay:.15s;}
+.think-dot:nth-child(3){animation-delay:.3s;}
+@keyframes thinkBounce{0%,60%,100%{transform:translateY(0);opacity:.4;}30%{transform:translateY(-4px);opacity:1;}}
+
+.readybox{
+  max-width:520px;margin:60px auto;text-align:center;background:#fff;border:1px solid var(--line);
+  border-radius:12px;padding:30px 26px;
+}
+.readybox .ic{font-size:34px;margin-bottom:10px;}
+.readybox h3{margin:0 0 6px;color:var(--navy-dark);font-size:15px;}
+.readybox p{margin:0;color:var(--ink-soft);font-size:11.5px;line-height:1.7;}
+.readybox .soon{
+  display:inline-block;margin-top:12px;font:700 10px var(--mono);color:var(--gold);
+  background:#F6EEDA;padding:3px 10px;border-radius:20px;
+}
+
+.inputbar{flex:none;padding:10px 20px 13px;border-top:1px solid var(--line);background:#fff;}
+.inputbar-inner{max-width:760px;margin:0 auto;}
+.chips-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;}
+.chip-btn{
+  border:1px solid var(--line);background:#FBFAF7;border-radius:20px;padding:5px 11px;
+  font-size:10.5px;color:var(--ink-soft);cursor:pointer;
+}
+.chip-btn:hover{border-color:var(--navy);color:var(--navy);}
+.chat-inputrow{border:1.5px solid var(--line);border-radius:9px;padding:9px 12px;background:#fff;}
+.chat-inputrow textarea{
+  width:100%;border:none;outline:none;resize:none;font:400 13px var(--sans);color:var(--ink);
+  background:transparent;line-height:1.6;min-height:22px;max-height:160px;overflow-y:auto;display:block;
+}
+.inputbar-toolrow{display:flex;align-items:center;gap:7px;margin-top:7px;}
+.tool-chip{
+  font-size:10.5px;font-weight:500;color:#5b636e;background:#F1EEE6;border:1px solid var(--line);
+  border-radius:5px;padding:4px 9px;
+}
+.autogrow-tag{font:600 9px var(--mono);color:var(--gold);}
+.tb-spacer2{flex:1;}
+.sendBtn{
+  flex:none;width:32px;height:32px;border:none;border-radius:6px;background:var(--navy);color:#fff;
+  font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+}
+.sendBtn:hover{background:var(--navy-dark);}
+.disclaimer{text-align:center;font-size:9.5px;color:#a7aeb8;margin-top:7px;}
+
+/* RIGHT: 보고서 변환 + 로드맵 */
+aside.report{width:320px;flex:none;background:#fff;border-left:1px solid var(--line);display:flex;flex-direction:column;overflow:hidden;}
+.report-top-block{flex:1 1 auto;display:flex;flex-direction:column;min-height:0;}
+.report-head{flex:none;padding:13px 14px 10px;border-bottom:1px solid var(--line);}
+.report-head-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.report-title{font-weight:800;font-size:13.5px;color:var(--navy-dark);display:flex;align-items:center;gap:6px;}
+.report-tag{font:700 9px var(--mono);color:var(--accent);background:#FBEFE1;border-radius:3px;padding:2px 6px;}
+.rbtn-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+.rbtn-grid .rbtn:nth-child(5):last-child{grid-column:1 / -1;}
+.rbtn{
+  border:1px solid var(--line);background:#FBFAF7;border-radius:6px;padding:8px 5px;cursor:pointer;
+  text-align:center;font-size:11px;font-weight:600;color:var(--ink-soft);
+}
+.rbtn:hover{border-color:var(--navy);}
+.rbtn.active{border-color:var(--navy);background:var(--navy);color:#fff;font-weight:700;}
+
+.report-body{flex:1;overflow-y:auto;padding:13px 14px;min-height:80px;}
+.doc-empty{color:#AFA898;font-size:11.5px;text-align:center;padding:30px 10px;line-height:1.8;}
+.doc-title-simple{font-weight:800;font-size:14px;color:var(--navy);margin-bottom:11px;padding-bottom:9px;border-bottom:2px solid var(--navy);}
+pre.doc-body{white-space:pre-wrap;word-break:keep-all;font-family:var(--sans);font-size:11px;line-height:1.8;color:var(--ink);margin:0;}
+.doc-foot{margin-top:14px;padding-top:7px;border-top:1px solid var(--line);font-size:8.5px;color:#B2AA98;font-family:var(--mono);}
+
+.report-foot{flex:none;padding:10px 14px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:6px;}
+.rf-row{display:flex;gap:6px;}
+.rf-btn{flex:1;border:1px solid var(--line);background:#fff;border-radius:5px;padding:8px 0;font:600 10.5px var(--sans);color:var(--ink-soft);cursor:not-allowed;opacity:.6;}
+.rf-save{flex:1;border:none;border-radius:5px;padding:8px 0;font:700 10.5px var(--sans);color:#fff;background:var(--navy);cursor:pointer;}
+.rf-save:hover{background:var(--navy-dark);}
+.rf-save:disabled{background:#B9BFC6;cursor:not-allowed;}
+
+/* 로드맵 블록 */
+.roadmap-block{flex:0 0 auto;max-height:280px;overflow-y:auto;padding:12px 14px 16px;border-top:2px solid var(--line);background:#FBFAF6;}
+.roadmap-title{font-size:11px;font-weight:800;color:var(--navy);margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+.constraint-box{
+  background:#F4F1E8;border:1px solid #E4DBC2;border-radius:10px;padding:11px 12px;font-size:10px;
+  color:#5C5540;line-height:1.65;margin-bottom:10px;
+}
+.constraint-box b{color:#3D3826;}
+.kw{color:var(--seal);font-weight:800;}
+.tier-item{background:#fff;border:1px solid var(--line);border-radius:9px;padding:8px 9px;margin-bottom:6px;}
+.tier-item h3{margin:0 0 3px;font-size:10.5px;color:var(--navy);}
+.tier-item h3 .kw{color:var(--seal);}
+.tier-item p{margin:0;font-size:9.5px;color:var(--ink-soft);line-height:1.5;}
+
+/* ================= REGISTRATION MODAL ================= */
+#regModal{
+  position:fixed;inset:0;z-index:1000;background:rgba(20,25,35,.55);display:flex;
+  align-items:center;justify-content:center;padding:20px;
+}
+.reg-card{width:520px;max-height:94vh;overflow-y:auto;background:#fff;border-radius:10px;box-shadow:0 24px 70px rgba(0,0,0,.4);}
+.reg-top{height:4px;background:linear-gradient(90deg,var(--accent),var(--gold));border-radius:10px 10px 0 0;}
+.reg-head{padding:18px 22px 13px;border-bottom:1px solid #eef0f3;}
+.reg-head .rt{font-weight:800;font-size:15px;color:var(--navy-dark);}
+.reg-head .rs{font-size:10.5px;color:#98a0ab;margin-top:2px;}
+.reg-body{padding:18px 22px;display:flex;flex-direction:column;gap:15px;}
+.reg-sec-label{font-weight:700;font-size:11.5px;color:var(--ink-soft);margin-bottom:7px;}
+.reg-sec-label .sub{font-weight:500;color:#a7aeb8;}
+.reg-body select, .reg-body input[type=text]{
+  width:100%;border:1px solid var(--line);border-radius:6px;padding:9px 11px;font:500 13px var(--sans);
+  color:var(--ink);background:#fff;
+}
+.reg-body select:disabled, .reg-body input[type=text]:disabled{background:#F1EEE6;color:#6B6558;font-weight:600;}
+.reg-hint{font-size:11px;color:var(--seal);line-height:1.6;margin-top:8px;font-weight:700;background:#FDECEA;border:1px solid #F0C6BE;border-radius:6px;padding:8px 10px;}
+.reg-hint b{color:#8C2C1F;}
+.two-col-reg{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.budget-drop{
+  border:1.5px dashed var(--line);border-radius:6px;padding:18px;text-align:center;cursor:pointer;background:#FBFAF7;
+}
+.budget-drop .bi{font-size:18px;color:#aab0b8;}
+.budget-drop .bt{font-weight:700;font-size:12px;color:var(--ink-soft);margin-top:4px;}
+.budget-drop .bh{font:600 9.5px var(--mono);color:#a7aeb8;margin-top:4px;}
+.budget-error{margin-top:8px;font-size:10.5px;color:#a13327;background:#fdecea;border:1px solid #f0c6be;border-radius:6px;padding:8px 10px;line-height:1.6;}
+.budget-error b{color:#8c2c1f;}
+.budget-ok{border:1px solid #cfe3d6;background:#f0f8f3;border-radius:6px;padding:11px 12px;}
+.budget-ok .bok{font:700 10.5px var(--sans);color:#2f7a4a;margin-bottom:7px;}
+.budget-ok .bitem{display:flex;align-items:center;gap:7px;font-size:11px;color:#3a414c;margin-bottom:4px;}
+.budget-ok .bitem .d{width:5px;height:5px;background:var(--accent);flex:none;border-radius:1px;}
+.budget-ok .bitem .amt{margin-left:auto;font:600 9.5px var(--mono);color:#8a9099;}
+.reg-foot{padding:12px 22px 20px;display:flex;gap:9px;align-items:center;}
+.reg-foot .note{font:600 9.5px var(--mono);color:#a7aeb8;line-height:1.5;flex:1;}
+.reg-complete-btn{flex:none;border:none;border-radius:6px;padding:11px 17px;font:700 12.5px var(--sans);color:#fff;background:#c8cdd5;cursor:not-allowed;}
+.reg-complete-btn.ok{background:var(--navy);cursor:pointer;}
+.reg-complete-btn.ok:hover{background:var(--navy-dark);}
+#budgetInputHidden{display:none;}
+</style>
+</head>
+<body>
+
+<div id="app">
+  <header class="top"></header>
+  <div class="topbar">
+    <div class="tb-logo">파주시 Work<span>Potluck</span> <span style="font-weight:400;font-size:11.5px;color:#B9C7D6;">(워크포트락)</span></div>
+    <div class="tb-div"></div>
+    <div class="tb-chip">일잘러 AI (6조)</div>
+    <div class="tb-tagline">내 업무 바구니에 수시로 자료를 넣어두시고, 원하는 대로 꺼내 쓰세요</div>
+    <div class="tb-spacer"></div>
+    <div class="tb-user" id="tbUser">등록 전</div>
+    <button class="edit-btn" id="editRegBtn" style="display:none;">✎ 수정</button>
+  </div>
+
+  <div class="body-row">
+    <!-- ===================== SIDEBAR ===================== -->
+    <aside class="sidebar">
+      <div class="sb-scroll">
+
+        <!-- ① 업무 자료 담기 -->
+        <div class="sb-section">
+          <div class="sb-head"><span class="sb-head-left"><span class="num-badge">1</span>업무 자료 담기</span></div>
+          <div class="basket-box">
+            <div class="cat-row" id="catRow">
+              <div class="cat-label">업무 바구니 선택</div>
+              <select id="fileCategory"></select>
+            </div>
+            <input type="file" id="fileInput" multiple>
+            <div class="mask-note" id="maskNote">⚠ 개인정보(연락처 등)로 추정되는 항목이 감지되어 자동으로 마스킹(●●●●) 처리했습니다.</div>
+          </div>
+        </div>
+
+        <!-- ② 담당세부사업 / AI 업무 협업 범위 -->
+        <div class="sb-section" id="budgetSection" style="display:none;">
+          <div class="sb-head"><span class="sb-head-left"><span class="num-badge">2</span>담당세부사업 / AI 업무 협업 범위</span><button class="sb-head-btn" id="addBudgetRootBtn" title="새 업무 범위(카테고리) 추가">＋ 추가</button></div>
+          <div id="budgetTree"></div>
+        </div>
+
+        <!-- ③ 기타업무 -->
+        <div class="sb-section">
+          <div class="sb-head"><span class="sb-head-left"><span class="num-badge">3</span>기타업무</span><button class="sb-head-btn" id="addOtherRootBtn" title="새 업무 범위(카테고리) 추가">＋ 추가</button></div>
+          <div id="otherTree"></div>
+        </div>
+
+      </div>
+      <div class="sb-foot">클릭 = AI 협업 범위 선택 · + 하위 폴더 추가 · × 삭제 (웹하드 방식)</div>
+    </aside>
+
+    <!-- ===================== CENTER ===================== -->
+    <main class="center">
+      <!-- 1행: 파주시 AI 업무비서 타이틀 + 기능/모델 선택 -->
+      <div class="agent-titlebar">
+        <div class="agent-title"><span class="num-badge num-badge-lg">4</span>파주시 AI 업무비서</div>
+        <div class="agent-title-right">
+          <span class="ai-model-label">🤖 AI 모델 선택</span>
+          <button class="feat-btn" id="featBtn">💬 <span id="featBtnLabel">ChatAgent</span> <span style="color:#98a0ab;font-size:9px;">▾</span></button>
+          <button class="model-chip" id="modelChip"><span class="gdot"></span><span id="modelLabel">Claude Sonnet 5</span> <span style="color:#98a0ab;font-size:9px;">▾</span></button>
+          <div class="feat-dropdown" id="featDropdown"></div>
+          <div class="model-dropdown" id="modelDropdown"></div>
+        </div>
+      </div>
+
+      <!-- 2행: AI 업무 협업 범위 탭 (고정 4개 + 현재 선택된 세부사업) -->
+      <div class="scope-row">
+        <div class="tab-fixed-label">AI 업무 협업 범위</div>
+        <div class="tabbar" id="scopeTabBar"></div>
+      </div>
+
+      <div class="center-scroll" id="centerScroll">
+        <div class="center-inner" id="centerInner"></div>
+      </div>
+
+      <div class="inputbar" id="inputBar">
+        <div class="inputbar-inner">
+          <div class="chat-inputrow">
+            <textarea id="chatInput" placeholder="메시지를 입력하세요…" rows="1"></textarea>
+            <div class="inputbar-toolrow">
+              <span class="tool-chip">＋</span>
+              <span class="tool-chip">🔧 도구 ▾</span>
+              <span class="tool-chip">🌐 웹 검색</span>
+              <div class="tb-spacer2"></div>
+              <span class="autogrow-tag">↕ 자동 확장</span>
+              <button class="sendBtn" id="chatSendBtn">↑</button>
+            </div>
+          </div>
+          <div class="disclaimer">ⓘ AI 생성 참고정보로 공식 해석을 대체하지 않으며, 이용 책임은 본인에게 있고, 개인정보·비공개 정보 입력은 금지됩니다.</div>
+        </div>
+      </div>
+    </main>
+
+    <!-- ===================== RIGHT: 보고서 변환 + 로드맵 ===================== -->
+    <aside class="report">
+      <div class="report-top-block">
+        <div class="report-head">
+          <div class="report-head-row">
+            <span class="report-title"><span class="num-badge">5</span> 보고서 변환</span>
+            <span class="report-tag">양식 데이터</span>
+          </div>
+          <div class="rbtn-grid" id="reportBtnGrid"></div>
+        </div>
+        <div class="report-body" id="docSheet">
+          <div class="doc-empty">왼쪽에서 자료를 첨부한 뒤<br><b>위에서 원하는 출력 형식을 선택</b>하면 여기에 문서가 생성됩니다.</div>
+        </div>
+        <div class="report-foot">
+          <div class="rf-row">
+            <button class="rf-btn" disabled title="시연용 비활성">한글</button>
+            <button class="rf-btn" disabled title="시연용 비활성">Excel</button>
+          </div>
+          <div class="rf-row">
+            <button class="rf-save" id="copyBtn" disabled>복사</button>
+            <button class="rf-save" id="downloadBtn" disabled>다운로드</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="roadmap-block">
+        <div class="roadmap-title"><span class="num-badge">6</span> 웹프로그램 제약사항 안내 및 향후 로드맵</div>
+        <div class="constraint-box">
+          본 웹 프로그램은 「2026년도 파주시 AI 전문가 교육 및 동아리 활동」의 동아리 제6조(일잘러_AI팀)의 과제 산출물입니다.<br>
+          · 프로그램의 구동은 <b class="kw">데모 버전</b>으로, 실제 업무(노후 농업기계 지원사업 등)를 기반으로 가공하여 구성하였습니다.<br>
+          · 현재 파주시 <b class="kw">보안·개인정보 등 여건상 외부 API 연결이 불가한 점</b>을 이해 바라며, 본 프로그램의 AI 업무비서 답변은 실제 AI의 사전 답변을 기반으로 <b class="kw">시나리오 방식</b>으로 연동하였습니다.<br>
+          · 확산 시 <b class="kw">Ollama 등 폐쇄망 LLM 연동</b>으로 고도화할 계획입니다.
+        </div>
+        <div class="tier-item"><h3><span class="kw">🔒 Ollama 폐쇄망 LLM</span></h3><p>내부망 로컬 LLM 연동 시 규칙기반·사전 시나리오 → 실시간 자연어 응답으로 고도화 예정</p></div>
+        <div class="tier-item"><h3><span class="kw">🗄 Supabase 다중사용자 DB</span></h3><p>부서별 자료를 실시간 공유하는 공동 DB 구조로 확장 예정</p></div>
+        <div class="tier-item"><h3><span class="kw">🏛 새올 행정시스템 연동</span></h3><p>인사정보·조직도 자동 동기화 및 예산 데이터 자동 연동 예정</p></div>
+        <div class="tier-item" style="margin-bottom:0;"><h3><span class="kw">📎 OCR·엑셀 파서 자동화</span></h3><p>pdf·hwp·xlsx 등 업로드 시 본문·표 자동 인식 지원 예정</p></div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<!-- ===================== REGISTRATION MODAL ===================== -->
+<div id="regModal">
+  <div class="reg-card">
+    <div class="reg-top"></div>
+    <div class="reg-head">
+      <div class="rt" id="regHeadTitle">WorkPotluck 담당자 등록</div>
+      <div class="rs">최초 1회 · 이후 자동 연결 · 파주시 AI 혁신동아리 일잘러 AI팀 6조</div>
+    </div>
+    <div class="reg-body">
+      <div>
+        <div class="reg-sec-label">① 소속 <span class="sub">· 파주시청 조직도</span></div>
+        <select id="selBureau"><option value="">국 / 직속기관·사업소 선택</option></select>
+        <div class="two-col-reg" style="margin-top:8px;">
+          <select id="selDept" disabled><option value="">과 선택</option></select>
+          <select id="selTeam" disabled><option value="">팀 선택</option></select>
+        </div>
+        <div id="orgPreview" style="margin-top:8px;font-size:12.5px;">현재 선택 : <span id="orgPreviewText" style="color:#98a0ab;">(미선택)</span></div>
+        <div class="reg-hint">파주시 워크포트락 데모버전이므로, 담당자는 <b>농업기술센터-기술보급과-농업기계팀 김파주 주무관</b>으로 지정되어 시연됩니다.</div>
+      </div>
+      <div>
+        <div class="reg-sec-label">② 직위/직급 · 성명 <span class="sub">· 고정값(데모)</span></div>
+        <div class="two-col-reg">
+          <input type="text" id="staffTitle" value="주무관" disabled>
+          <input type="text" id="staffName" value="김파주" disabled>
+        </div>
+      </div>
+      <div>
+        <div class="reg-sec-label">③ 담당 예산서 등록 <span class="sub">· 세부사업 자동 등록</span></div>
+        <div id="budgetEmptyBox" class="budget-drop">
+          <div class="bi">⤓</div>
+          <div class="bt">01_2026년_예산서.xls 첨부 (필수 파일명 일치)</div>
+          <div class="bh">해당 파일만 세부사업 자동 등록 · 다른 파일은 인식되지 않음</div>
+        </div>
+        <div id="budgetError" class="budget-error" style="display:none;"></div>
+        <div id="budgetOkBox" class="budget-ok" style="display:none;">
+          <div class="bok">✓ 예산서 등록됨 · 세부사업 자동 등록</div>
+          <div id="budgetOkList"></div>
+        </div>
+        <input type="file" id="budgetInputHidden" accept=".csv,.xlsx,.xls">
+        <button type="button" id="loadDemoOrg" style="width:100%;margin-top:9px;padding:8px;border-radius:7px;border:1px dashed var(--gold);background:#FBF6E9;color:#8A6A16;font-weight:700;font-size:11px;cursor:pointer;">▶ 데모 소속·예산 자동 채우기 (농업기술센터-기술보급과-농업기계팀)</button>
+      </div>
+    </div>
+    <div class="reg-foot">
+      <div class="note">상용화 시 업무툴 접속으로<br>소속·세부사업 자동 인식</div>
+      <button class="reg-complete-btn" id="completeRegBtn" disabled>등록완료</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===================== 조직도 데이터 (등록 모달용) ===================== */
+const ORG = {
+  /* 본청 */
+  "예산재정실": {"예산법무과":null, "회계과":null, "세정과":null, "납세지원과":null, "징수과":null},
+  "민생경제국": {"민생경제과":null, "기업지원과":null, "에너지과":null, "위생과":null},
+  "행정안전국": {"행정지원과":null, "자치협력과":null, "안전총괄과":null, "민원여권과":null},
+  "복지정책국": {"복지정책과":null, "복지지원과":null, "노인장애인과":null, "여성가족과":null, "보육아동과":null, "청년청소년과":null},
+  "문화교육국": {"문화예술과":null, "관광과":null, "평생교육과":null, "체육과":null},
+  "도로교통국": {"교통정책과":null, "버스정책과":null, "도로건설과":null, "주차관리과":null, "첨단도시정보과":null},
+  "도시발전국": {"도시계획과":null, "균형개발과":null, "평화경제과":null, "공공건축과":null, "토지정보과":null, "부동산과":null},
+  "건축주택국": {"허가총괄과":null, "허가1과":null, "허가2과":null, "허가3과":null, "주택과":null, "건축디자인과":null},
+  "환경국": {"기후위기대응과":null, "자원순환과":null, "상수도과":null, "하수도과":null},
+  /* 직속기관 */
+  "파주보건소": {"보건행정과":null, "질병관리과":null, "건강증진과":null, "문산보건센터":null, "월롱보건지소":null, "탄현보건지소":null, "파평보건지소":null, "적성보건지소":null},
+  "운정보건소": {"보건행정팀":null, "의약관리팀":null, "진료검진팀":null, "건강100세팀":null, "모자보건팀":null},
+  "농업기술센터": {
+    "농업정책과":null,
+    "동물관리과":null,
+    "도시농업과":null,
+    "기술보급과": ["식량작물팀","연구개발팀","원예특작팀","농업기계팀","문산장단농업인상담실","법원파주농업인상담실","적성파평농업인상담실"]
+  },
+  /* 사업소 */
+  "도시관리사업본부": {"도시관리과":null, "하천관리과":null, "도로관리과":null, "산림정원과":null},
+  "차량등록사업소": {"차량등록팀":null, "특별사법경찰팀":null, "차량세무팀":null},
+  "중앙도서관": {"도서관정책팀":null, "도서관운영팀":null, "기록관리팀":null, "도서관협력팀":null},
+  "교하도서관": {"도서행정팀":null, "도서관운영팀":null, "한빛도서관팀":null, "해솔도서관팀":null, "한울도서관팀":null},
+  "문산도서관": {"도서행정팀":null, "도서관운영팀":null, "법원도서관팀":null, "광탄도서관팀":null}
+};
+/* 출처: 파주시청 홈페이지 HOME>파주소개>시청안내>조직도>파주시청 (최종 갱신일 2026.07.08) */
+
+const STATUS_COLOR = {'검토중':{c:'#6b7280',bg:'#eceef1'},'진행중':{c:'#1f5fa8',bg:'#e6eef7'},'완료':{c:'#2f7a4a',bg:'#e2f0e8'}};
+
+/* 담당세부사업 기본값 (예산서가 CSV로 파싱되지 않은 경우 사용) */
+function defaultBudgetTree(){
+  return [
+    {id:'b1', name:'농기계임대사업소 운영', amount:'649,680천원', status:'진행중', timelineKey:'b1', children:[]},
+    {id:'b2', name:'농업기계 안전교육 지원', amount:'6,000천원', status:'검토중', timelineKey:'b2', children:[]},
+    {id:'b3', name:'노후 농업기계 미세먼지 저감 대책 지원', amount:'22,000천원', status:'진행중', timelineKey:'b3', children:[]},
+  ];
+}
+const TIMELINES = {
+  b3: [
+    {label:'사업 검토', date:'2026.01', done:true},
+    {label:'계획 수립', date:'2026.02', done:true},
+    {label:'신청 접수', date:'2026.03.30~04.17', current:true},
+    {label:'대상자 선정 (서류 심사)', date:'2026.04월말', done:false},
+    {label:'폐차 이행·보조금 지급', date:'2026.05~10', done:false},
+    {label:'정산·결과보고', date:'2026.11', done:false},
+  ],
+  b1: [
+    {label:'예산 확정', date:'2026.01', done:true},
+    {label:'장비 점검', date:'2026.02~03', done:true},
+    {label:'임대 운영', date:'2026.04~11', current:true},
+    {label:'정산 완료', date:'2026.12', done:false},
+  ],
+  b2: [
+    {label:'계획 검토', date:'2026.02', current:true},
+    {label:'신청 접수', date:'2026.04~05', done:false},
+    {label:'검사 시행', date:'2026.06~09', done:false},
+    {label:'완료', date:'2026.10', done:false},
+  ],
+  ordinance: [
+    {label:'입법안 작성 · 초안심사', date:'입안부서·법제부서', done:true},
+    {label:'입법계획수립(방침결재)', date:'시장 결재', done:true},
+    {label:'의견조회 및 의견반영', date:'규제·부패·성별영향평가 등', current:true},
+    {label:'입법예고 및 의견반영', date:'20일 이상 시보 게재', done:false},
+    {label:'본심사 · 조례·규칙심의회 심의', date:'법제부서', done:false},
+    {label:'입법안 최종결재 · 시의회 제출', date:'시장 결재', done:false},
+    {label:'시의회 심의·의결 · 이송·접수', date:'', done:false},
+    {label:'공포 전 보고(경기도) · 공포', date:'', done:false},
+  ],
+};
+
+/* ===================== 상태 ===================== */
+const state = {
+  reg:{unit:'', dept:'', team:'', rank:'주무관', name:'김파주', budgetLoaded:false},
+  selectedNodeId:'CITY',
+  openAccordion:null,
+  feature:'chat', model:'Claude Sonnet 5',
+  featOpen:false, modelOpen:false,
+  selectedReport:null,
+  chatThinking:false,
+};
+
+let budgetTree = [];
+let otherWorkList = [{id:'other', name:'기타업무', children:[]}];
+
+const SCOPE_TABS = [
+  {id:'CITY', label:'파주시 전체'},
+  {id:'BUREAU:농업기술센터', label:'농업기술센터'},
+  {id:'DEPT:기술보급과', label:'기술보급과'},
+  {id:'TEAM:농업기계팀', label:'농업기계팀'},
+];
+
+const FEATURES = {
+  chat:    {name:'ChatAgent', icon:'💬', desc:'최신 모델 챗 비서입니다.'},
+  summary: {name:'요약/초안', icon:'📝', desc:'파일 문서를 일정한 형식으로 정리합니다.'},
+  image:   {name:'이미지생성', icon:'🖼️', desc:'AI로 이미지를 생성합니다.'},
+  manual:  {name:'당직매뉴얼', icon:'📕', desc:'파주시 당직민원 매뉴얼을 기반으로 답변합니다.'},
+  multi:   {name:'멀티 LLM 비교', icon:'🔀', desc:'동시에 LLM을 비교 분석하세요.'},
+  minutes: {name:'회의록', icon:'🎙️', desc:'녹음 파일을 업로드하면 요약해 드립니다.'},
+  law:     {name:'법령 조회 시스템', icon:'🏛️', desc:'법령·조례를 물어보세요.'},
+};
+const MODEL_LIST = ['Claude Sonnet 5','gpt-5.2','gpt-5.2-thinking','gemini-2.5','gemini-3.1','perplexity','grok-4'];
+
+/* ===================== 등록 모달 ===================== */
+const bureauSel = document.getElementById('selBureau');
+const deptSel = document.getElementById('selDept');
+const teamSel = document.getElementById('selTeam');
+
+function fillSelect(sel, items, placeholder){
+  sel.innerHTML = '<option value="">'+placeholder+'</option>';
+  items.forEach(i=>{
+    const o = document.createElement('option');
+    o.value = i; o.textContent = i;
+    sel.appendChild(o);
+  });
+}
+fillSelect(bureauSel, Object.keys(ORG), '국 / 직속기관·사업소 선택');
+
+bureauSel.addEventListener('change', ()=>{
+  const b = bureauSel.value;
+  teamSel.innerHTML = '<option value="">해당없음</option>'; teamSel.disabled = true;
+  state.reg.unit = b; state.reg.dept=''; state.reg.team='';
+  if(!b){ deptSel.innerHTML = '<option value="">과 선택</option>'; deptSel.disabled = true; refreshRegBtn(); updateOrgPreview(); return; }
+  fillSelect(deptSel, Object.keys(ORG[b]), '과 선택');
+  deptSel.disabled = false;
+  refreshRegBtn();
+  updateOrgPreview();
+});
+deptSel.addEventListener('change', ()=>{
+  const b = bureauSel.value, d = deptSel.value;
+  state.reg.dept = d; state.reg.team='';
+  if(!b || !d){ teamSel.innerHTML='<option value="">팀 선택</option>'; teamSel.disabled=true; refreshRegBtn(); updateOrgPreview(); return; }
+  const teams = ORG[b][d];
+  if(Array.isArray(teams)){
+    fillSelect(teamSel, teams, '팀 선택');
+    teamSel.disabled = false;
+  } else {
+    teamSel.innerHTML = '<option value="">해당없음 (과 단위 운영)</option>';
+    teamSel.disabled = true;
+  }
+  refreshRegBtn();
+  updateOrgPreview();
+});
+teamSel.addEventListener('change', ()=>{ state.reg.team = teamSel.value; refreshRegBtn(); updateOrgPreview(); });
+
+function isMachineryTeam(){
+  return state.reg.unit === "농업기술센터" && state.reg.dept === "기술보급과" && state.reg.team === "농업기계팀";
+}
+function updateOrgPreview(){
+  const r = state.reg;
+  const parts = [r.unit, r.dept, r.team].filter(Boolean);
+  const el = document.getElementById('orgPreviewText');
+  if(parts.length === 0){ el.textContent = '(미선택)'; el.style.fontWeight='500'; el.style.color='#98a0ab'; return; }
+  el.textContent = parts.join(' - ');
+  if(isMachineryTeam()){ el.style.fontWeight='800'; el.style.color='#141A22'; }
+  else { el.style.fontWeight='500'; el.style.color='#98a0ab'; }
+}
+
+document.getElementById('loadDemoOrg').addEventListener('click', ()=>{
+  bureauSel.value = "농업기술센터"; bureauSel.dispatchEvent(new Event('change'));
+  deptSel.value = "기술보급과"; deptSel.dispatchEvent(new Event('change'));
+  teamSel.value = "농업기계팀"; teamSel.dispatchEvent(new Event('change'));
+  loadDemoBudget();
+});
+
+/* ===================== 예산서 (등록 모달 내) ===================== */
+let budgetData = [];
+let budgetFileName = '';
+
+document.getElementById('budgetEmptyBox').addEventListener('click', ()=>{
+  document.getElementById('budgetInputHidden').click();
+});
+function isValidBudgetFile(name){
+  return /^01_/.test(name) && name.includes('예산서');
+}
+document.getElementById('budgetInputHidden').addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  if(!isValidBudgetFile(file.name)){
+    const err = document.getElementById('budgetError');
+    err.style.display = 'block';
+    err.innerHTML = `반드시 <b>01_2026년_예산서.xls</b> 파일을 첨부해야 세부사업이 자동 등록됩니다.<br>업로드하신 파일 : ${file.name}`;
+    e.target.value = '';
+    return;
+  }
+  document.getElementById('budgetError').style.display = 'none';
+  budgetFileName = file.name;
+  if(/\.csv$/i.test(file.name)){
+    const reader = new FileReader();
+    reader.onload = ()=>{ budgetData = parseBudgetCSV(reader.result); markBudgetLoaded(); };
+    reader.readAsText(file, 'UTF-8');
+  } else {
+    budgetData = [];
+    markBudgetLoaded();
+  }
+});
+function parseBudgetCSV(text){
+  const rows = text.split(/\r?\n/).map(r=>r.trim()).filter(Boolean);
+  if(rows.length < 2) return [];
+  return rows.slice(1).map(r=>{
+    const c = r.split(',').map(x=>x.trim());
+    return {name:c[0]||'', total:c[1]||'', national:c[2]||'', provincial:c[3]||'', city:c[4]||''};
+  }).filter(d=>d.name);
+}
+function loadDemoBudget(){
+  document.getElementById('budgetError').style.display = 'none';
+  budgetFileName = '01_2026년_예산서.xls';
+  budgetData = [];
+  markBudgetLoaded();
+}
+function buildBudgetTreeFromData(){
+  if(budgetData.length > 0){
+    return budgetData.map((d,i)=>({id:'bd'+i, name:d.name, amount:(d.total?d.total+'천원':''), children:[]}));
+  }
+  return defaultBudgetTree();
+}
+function markBudgetLoaded(){
+  state.reg.budgetLoaded = true;
+  document.getElementById('budgetEmptyBox').style.display = 'none';
+  const ok = document.getElementById('budgetOkBox');
+  ok.style.display = 'block';
+  const items = buildBudgetTreeFromData();
+  const list = document.getElementById('budgetOkList');
+  list.innerHTML = items.map(b=>`<div class="bitem"><span class="d"></span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${b.name}</span><span class="amt">${b.amount||''}</span></div>`).join('');
+  refreshRegBtn();
+}
+
+function refreshRegBtn(){
+  const r = state.reg;
+  const teamOk = !(bureauSel.value==='농업기술센터' && deptSel.value==='기술보급과') || !!teamSel.value;
+  const ok = !!(r.unit && r.dept && teamOk && r.budgetLoaded);
+  const btn = document.getElementById('completeRegBtn');
+  btn.disabled = !ok;
+  btn.classList.toggle('ok', ok);
+}
+document.getElementById('completeRegBtn').addEventListener('click', ()=>{
+  if(document.getElementById('completeRegBtn').disabled) return;
+  document.getElementById('regModal').style.display = 'none';
+  onRegistrationComplete();
+});
+
+function orgLine(){
+  const r = state.reg;
+  return r.team ? `${r.unit} · ${r.dept} · ${r.team}` : `${r.unit} · ${r.dept}`;
+}
+function getOrgLine(){
+  const b = state.reg.unit || "(국·기관 미선택)";
+  const d = state.reg.dept || "(과 미선택)";
+  const t = state.reg.team || "";
+  return t ? `${b} ${d} ${t}` : `${b} ${d}`;
+}
+function getStaffLine(){
+  return { t: state.reg.rank || "(직급 미입력)", n: state.reg.name || "(성명 미입력)" };
+}
+
+function openRegModalForEdit(){
+  document.getElementById('regHeadTitle').textContent = '담당자 / 예산서 정보 수정';
+  document.getElementById('completeRegBtn').textContent = '수정완료';
+  bureauSel.value = state.reg.unit || '';
+  bureauSel.dispatchEvent(new Event('change'));
+  if(state.reg.dept){ deptSel.value = state.reg.dept; deptSel.dispatchEvent(new Event('change')); }
+  if(state.reg.team){ teamSel.value = state.reg.team; teamSel.dispatchEvent(new Event('change')); }
+  updateOrgPreview();
+  if(state.reg.budgetLoaded){
+    document.getElementById('budgetEmptyBox').style.display = 'none';
+    document.getElementById('budgetOkBox').style.display = 'block';
+    const items = buildBudgetTreeFromData();
+    document.getElementById('budgetOkList').innerHTML = items.map(b=>`<div class="bitem"><span class="d"></span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${b.name}</span><span class="amt">${b.amount||''}</span></div>`).join('');
+  } else {
+    document.getElementById('budgetEmptyBox').style.display = 'block';
+    document.getElementById('budgetOkBox').style.display = 'none';
+  }
+  document.getElementById('budgetError').style.display = 'none';
+  refreshRegBtn();
+  document.getElementById('regModal').style.display = 'flex';
+}
+document.getElementById('editRegBtn').addEventListener('click', openRegModalForEdit);
+
+function onRegistrationComplete(){
+  document.getElementById('tbUser').innerHTML = `${orgLine()} · <b>${state.reg.name||''} ${state.reg.rank||''}</b>`;
+  document.getElementById('editRegBtn').style.display = 'inline-block';
+  document.getElementById('regHeadTitle').textContent = 'WorkPotluck 담당자 등록';
+  document.getElementById('completeRegBtn').textContent = '등록완료';
+  if(isMachineryTeam() && state.reg.budgetLoaded){
+    budgetTree = buildBudgetTreeFromData();
+    document.getElementById('budgetSection').style.display = 'block';
+  } else {
+    budgetTree = [];
+    document.getElementById('budgetSection').style.display = 'none';
+  }
+  renderScopeTabs();
+  renderBudgetTree();
+  renderOtherTree();
+  refreshFileCategoryOptions();
+  if(isMachineryTeam() && state.reg.budgetLoaded && budgetTree.length){
+    const target = budgetTree.find(b=>b.timelineKey==='b3') || budgetTree[0];
+    selectTreeNode(target.id, 'budget');
+  } else {
+    selectScopeTab('CITY');
+  }
+}
+
+/* ===================== 첨부파일 업로드 & 누적 ===================== */
+let uploadedFiles = [];
+
+function flattenTreeEntries(nodes, depth, out){
+  out = out || [];
+  depth = depth || 0;
+  nodes.forEach(n=>{
+    out.push({name:n.name, depth});
+    if(n.children && n.children.length) flattenTreeEntries(n.children, depth+1, out);
+  });
+  return out;
+}
+function refreshFileCategoryOptions(){
+  const entries = flattenTreeEntries(budgetTree).concat(flattenTreeEntries(otherWorkList));
+  const sel = document.getElementById('fileCategory');
+  const currentLabel = findNodeInfo(state.selectedNodeId).label;
+  sel.innerHTML = entries.map(e=>{
+    const indent = e.depth>0 ? '　'.repeat(e.depth) + '└ ' : '';
+    return `<option value="${e.name}">${indent}${e.name}</option>`;
+  }).join('');
+  const names = entries.map(e=>e.name);
+  /* 항상 현재 좌측에서 선택 중인 노드(세부사업/폴더)를 기본값으로 맞춤 — 다른 카테고리를 고른 채로 방치되어
+     엉뚱한 곳에 파일이 담기는 문제 방지 */
+  if(names.includes(currentLabel)) sel.value = currentLabel;
+  else if(names.length) sel.value = names[0];
+}
+
+document.getElementById('fileInput').addEventListener('change', (e)=>{
+  const files = Array.from(e.target.files);
+  const catSel = document.getElementById('fileCategory');
+  const category = catSel.value || null;
+  const bureau = state.reg.unit || '';
+  const dept = state.reg.dept || '';
+  const team = state.reg.team || '';
+  files.forEach(file=>{
+    const isText = /\.txt$/i.test(file.name);
+    if(isText){
+      const reader = new FileReader();
+      reader.onload = ()=>{
+        uploadedFiles.push({name:file.name, content:reader.result, isText:true, category, bureau, dept, team});
+        checkMasking();
+        refreshTreeAccordions();
+      };
+      reader.readAsText(file, 'UTF-8');
+    } else {
+      uploadedFiles.push({name:file.name, content:'', isText:false, category, bureau, dept, team});
+      refreshTreeAccordions();
+    }
+  });
+  e.target.value = '';
+});
+
+/* 파일목록은 별도 표시창 없이, 해당 세부사업/기타업무 클릭 시 아코디언에서만 노출됨 */
+function refreshTreeAccordions(){
+  renderBudgetTree();
+  renderOtherTree();
+}
+
+function fileMatchesScope(f, scope){
+  if(!scope || scope === 'CITY') return true;
+  if(scope.startsWith('TEAM:'))   return f.team   === scope.slice(5);
+  if(scope.startsWith('DEPT:'))   return f.dept   === scope.slice(5);
+  if(scope.startsWith('BUREAU:')) return f.bureau === scope.slice(7);
+  return f.category === scope;
+}
+function getAccumulatedText(scope){
+  let text = '';
+  uploadedFiles.forEach(f=>{
+    if(!fileMatchesScope(f, scope)) return;
+    if(f.isText){
+      text += `\n\n[첨부: ${f.name}${f.category?` / ${f.category}`:''}]\n${f.content}`;
+    } else {
+      text += `\n\n[첨부: ${f.name}${f.category?` / ${f.category}`:''} - 본문 추출 미지원(로드맵 항목), 파일명만 인식됨]`;
+    }
+  });
+  return text;
+}
+
+function checkMasking(){
+  const txt = getAccumulatedText();
+  const hasPhone = /01[0-9]-?\d{3,4}-?\d{4}/.test(txt);
+  document.getElementById('maskNote').classList.toggle('show', hasPhone);
+}
+function maskPII(text){
+  return text.replace(/01[0-9]-?\d{3,4}-?\d{4}/g, '010-****-****')
+             .replace(/\d{6}-[1-4]\d{6}/g, '******-*******');
+}
+
+/* ===================== 자료 파싱 유틸 ===================== */
+function parseBasket(){
+  const raw = getAccumulatedText().trim();
+  const text = maskPII(raw);
+  const lines = text.split('\n').map(l=>l.trim()).filter(Boolean);
+  return {raw:text, lines};
+}
+function todayStr(){
+  const d = new Date();
+  return `${d.getFullYear()}. ${d.getMonth()+1}. ${d.getDate()}.`;
+}
+function regNo(){
+  return `기술보급과-${1000+Math.floor(Math.random()*8999)}`;
+}
+
+/* ===================== 출력 생성기 ===================== */
+function genOfficial(p){
+  const {t,n} = getStaffLine();
+  let body = `수      신 : 수신자 참조\n(경    유)\n`;
+  body += `제      목 : 2026년 노후 농업기계 미세먼지 저감대책 지원사업 신청 안내\n\n`;
+  body += `1. 「2026년 노후 농업기계 미세먼지 저감대책 지원사업」 시행지침(농림축산식품부)과 관련입니다.\n\n`;
+  body += `2. 노후 경유 농업기계(트랙터·콤바인) 조기폐차 지원을 위한 「2026년 노후 농업기계 미세먼지 저감대책 지원사업」 신청을 아래와 같이 접수하오니, 참여를 희망하는 농업인께서는 신청서를 작성하여 2026. 4. 17.(금)까지 제출하여 주시기 바랍니다.\n`;
+  body += `   - 지원대상 : 2012. 12. 31. 이전 생산된 트랙터·콤바인을 6개월 이상 소유한 농업인\n`;
+  body += `   - 지원금액 : 트랙터 100~649만원 / 콤바인 100~1,773만원 (제조연도·규격별 차등)\n`;
+  body += `   - 접수처 : 농업기술센터 기술보급과 농업기계팀(031-940-5260), 임대사업소 북부지소\n\n`;
+  body += `3. 아울러 관내 폐차 지정업소(월롱면 소재)를 통해서만 폐차가 가능함을 안내하오니 업무에 참고하시기 바랍니다.\n\n`;
+  body += `붙임  1. 신청서(면세유 공급보류 및 말소 신청서 포함) 1부.\n`;
+  body += `      2. 보조금 산정 기준 1부.\n`;
+  body += `      3. 2026년 노후 농업기계 미세먼지 저감대책 지원사업 지침 1부.  끝.`;
+  body += `\n\n담당자 : ${getOrgLine()} ${t} ${n}`;
+  return {title:"공문서", body};
+}
+function genWeekly(p){
+  const today = new Date();
+  const end = new Date(today); end.setDate(today.getDate()+6);
+  const fmt = d => `${d.getFullYear()}. ${d.getMonth()+1}. ${d.getDate()}.`;
+  let body = `주 간 업 무 보 고\n(${fmt(today)} ~ ${fmt(end)})\n\n`;
+  body += `[농업기술센터]\n\n`;
+  body += `▣ 기술보급과 농업기계팀\n\n`;
+  body += `1. 노후 농업기계 미세먼지 저감대책 지원사업 추진\n`;
+  body += `   ○ 사 업 명 : 노후 농업기계 미세먼지 저감대책 지원사업\n`;
+  body += `   ○ 사 업 비 : 22,000천원(국비 11,000 / 도비 3,300 / 시비 7,700)\n`;
+  body += `   ○ 사 업 량 : 신청·접수 진행 중 (2025년 실적 : 선정 5건 / 신청 19건, 선정률 26.3%)\n`;
+  body += `   ○ 추진현황 : 신청 접수 진행 중 (2026. 3. 30. ~ 4. 17.), 관내 폐차 지정업소 1개소(월롱면) 운영 중\n`;
+  body += `   ○ 향후계획 : 접수 마감 후 서류 심사 및 대상자 선정(4월) → 폐차 이행 및 보조금 지급(5~10월) → 정산(11월)`;
+  return {title:"주간업무보고", body};
+}
+function genUrgent(p){
+  let body = `농업기술센터\n`;
+  body += `노후 농업기계 미세먼지 저감대책 지원사업 예산 부족 현안 보고                              기술보급과\n\n`;
+  body += `주요내용\n\n`;
+  body += `□ 현황과 문제점\n`;
+  body += `  ○ 2025년 신청 19건(트랙터 8, 콤바인 11) 중 5건만 선정, 선정률 26.3%에 그침\n`;
+  body += `    - 예산 부족으로 다수 신청자가 지원받지 못함\n`;
+  body += `  ○ 2026년 예산은 22,000천원으로 전년(25,050천원) 대비 3,050천원 감액 편성\n`;
+  body += `    - 신청 수요 대비 예산 부족이 더 심화될 우려\n\n`;
+  body += `□ 해결방안\n`;
+  body += `  ○ 추경 편성을 통한 예산 증액 검토\n`;
+  body += `  ○ 신청 초과 시 우선순위 기준(생산연도가 오래된 순 등) 마련\n`;
+  body += `    - 관련 조례 개정(제7조⑤항 신설) 추진 중\n`;
+  body += `  ○ 관내 폐차 지정업소(월롱면) 외 인근 시·군 업소 병행 활용 검토\n\n`;
+  body += `□ 기대효과\n`;
+  body += `  ○ 노후 농업기계 조기폐차를 통한 미세먼지 저감 효과 확대\n`;
+  body += `  ○ 형평성 있는 지원대상자 선정으로 민원 최소화\n`;
+  body += `  ○ 안정적 사업 추진을 통한 농업인 만족도 제고\n\n`;
+  body += `붙임  1. 2025년 사업 집행현황 1부.\n      2. 2026년 예산서 1부.  끝.`;
+  return {title:"현안보고", body};
+}
+function genMemo(p){
+  const {t,n} = getStaffLine();
+  const today = new Date();
+  const weekday = ['일','월','화','수','목','금','토'][today.getDay()];
+  const dateStr = `'${String(today.getFullYear()).slice(2)}. ${today.getMonth()+1}. ${today.getDate()}.(${weekday})`;
+  let body = `주 요 사 항 보 고\n`;
+  body += `${dateStr}                                    ${getOrgLine()}\n`;
+  body += `                                          ${t} ${n}(031-940-5260)\n\n`;
+  body += `□ 개요\n`;
+  body += `  ○ 사 업 명 : 2026년 노후 농업기계 미세먼지 저감대책 지원사업\n`;
+  body += `  ○ 신청기간 : 2026. 3. 30.(월) ~ 4. 17.(금)\n`;
+  body += `  ○ 예 산 액 : 22,000천원(국비 11,000 / 도비 3,300 / 시비 7,700)\n\n`;
+  body += `□ 현재 추진현황\n`;
+  body += `  ○ 신청 접수 진행 중이며, 관내 폐차 지정업소 1개소(월롱면 소재)가 운영 중\n`;
+  body += `  ○ 2025년 실적 : 신청 19건(트랙터 8 / 콤바인 11) 중 5건 선정, 선정률 26.3%\n`;
+  body += `  ○ 접수 마감(4.17.) 이후 서류 심사·대상자 선정(4월말) → 폐차 이행 및 보조금 지급(5~10월) 순으로 진행 예정\n\n`;
+  body += `□ (예상)건의사항\n`;
+  body += `  ○ 2025년 선정률 26.3%(신청 19건 중 5건 선정)로 예산 부족 → 증액 검토 필요\n`;
+  body += `  ○ 관내 폐차 지정업소(월롱면 소재) 1개소로 처리물량 집중 우려 → 인근 시·군 업소 병행 검토`;
+  return {title:"쪽지보고", body};
+}
+
+function genPress(p){
+  const today = new Date();
+  const dateStr = `${today.getFullYear()}. ${today.getMonth()+1}. ${today.getDate()}.`;
+  let body = `『노후 경유 농기계, 조기폐차로 바꾸면 최대 1,773만원 지원』\n`;
+  body += `– 파주시, 2026년 노후 농업기계 미세먼지 저감대책 지원사업 신청 접수(3.30.~4.17.) –\n\n`;
+  body += `파주시(시장 ○○○)는 미세먼지 저감과 농업기계 안전사고 예방을 위해 「2026년 노후 농업기계 미세먼지 저감대책 지원사업」 신청을 3월 30일(월)부터 4월 17일(금)까지 접수한다고 밝혔다.\n\n`;
+  body += `이번 사업은 2012년 12월 31일 이전 생산된 노후 경유 트랙터·콤바인을 조기 폐차하는 농업인에게 보조금을 지원하는 사업으로, 트랙터는 최대 649만원, 콤바인은 최대 1,773만원까지 제조연도와 규격에 따라 차등 지급된다. 지원 대상은 관련 기계를 6개월 이상 소유한 농업인이며, 국비·도비·시비를 합쳐 총 22,000만원(2만 2천만 원) 규모의 예산이 투입된다.\n\n`;
+  body += `시 관계자는 “노후 농기계는 배출가스 저감장치가 없어 미세먼지 발생은 물론 잦은 고장으로 인한 농작업 안전사고 위험도 크다”며, “이번 지원사업을 통해 친환경·안전 영농 기반을 확대해 나가겠다”고 밝혔다.\n\n`;
+  body += `한편 시는 지난해(2025년) 같은 사업에서 19건의 신청 중 5건을 선정(선정률 26.3%)한 바 있어, 올해는 신청 수요에 대비해 예산 확대 등 보완 방안도 함께 검토하고 있다고 설명했다.\n\n`;
+  body += `신청은 농업기술센터 기술보급과 농업기계팀(031-940-5260) 또는 임대사업소 북부지소(파평면)를 통해 접수하며, 자세한 사항은 파주시 홈페이지 고시공고란에서 확인할 수 있다.\n\n`;
+  body += `※ 본 자료는 실제 배포 전 검토용 초안이며, 시장 성명·수치는 담당부서 확인 후 최종 확정됩니다.`;
+  return {title:"보도자료(초안)", body};
+}
+
+const GENERATORS = {
+  official: {label:"공문서", fn:genOfficial},
+  weekly:   {label:"주간업무보고", fn:genWeekly},
+  urgent:   {label:"현안보고", fn:genUrgent},
+  memo:     {label:"쪽지보고", fn:genMemo},
+  press:    {label:"보도자료", fn:genPress},
+};
+
+/* ===================== 우측 보고서 변환 버튼 / 출력 ===================== */
+const reportBtnGrid = document.getElementById('reportBtnGrid');
+function renderReportButtons(){
+  reportBtnGrid.innerHTML = '';
+  Object.entries(GENERATORS).forEach(([key,g])=>{
+    const btn = document.createElement('button');
+    btn.className = 'rbtn' + (state.selectedReport===key ? ' active':'');
+    btn.textContent = g.label;
+    btn.addEventListener('click', ()=>{
+      state.selectedReport = key;
+      renderReportButtons();
+      renderOutput(key);
+    });
+    reportBtnGrid.appendChild(btn);
+  });
+}
+renderReportButtons();
+
+let lastPlainText = '';
+let lastTitle = '';
+function renderOutput(key){
+  const p = parseBasket();
+  if(!p.raw){
+    document.getElementById('docSheet').innerHTML = '<div class="doc-empty">먼저 <b>① 업무 자료 담기</b>에서 자료를 첨부해 주세요.</div>';
+    document.getElementById('copyBtn').disabled = true;
+    document.getElementById('downloadBtn').disabled = true;
+    return;
+  }
+  const {title, body} = GENERATORS[key].fn(p);
+  const {t,n} = getStaffLine();
+  const sheet = document.getElementById('docSheet');
+  sheet.innerHTML = `
+    <div class="doc-title-simple">${title}</div>
+    <pre class="doc-body" id="docBodyPre"></pre>
+    <div class="doc-foot">작성 : ${getOrgLine()} ${t} ${n}　생성 : WorkPotluck 프로토타입 (규칙기반, Tier 1)</div>
+  `;
+  document.getElementById('docBodyPre').textContent = body;
+  lastTitle = title;
+  lastPlainText = `${title}\n소속: ${getOrgLine()}\n작성: ${t} ${n}\n\n${body}`;
+  document.getElementById('copyBtn').disabled = false;
+  document.getElementById('downloadBtn').disabled = false;
+}
+document.getElementById('copyBtn').addEventListener('click', ()=>{
+  const btn = document.getElementById('copyBtn');
+  const doCopy = (text)=>{
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(()=> flash()).catch(()=> fallbackCopy(text));
+    } else { fallbackCopy(text); }
+  };
+  const fallbackCopy = (text)=>{
+    const ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta); ta.select();
+    try{ document.execCommand('copy'); }catch(e){}
+    document.body.removeChild(ta); flash();
+  };
+  const flash = ()=>{
+    const orig = btn.textContent;
+    btn.textContent = '✓ 복사됨';
+    setTimeout(()=> btn.textContent = orig, 1400);
+  };
+  doCopy(lastPlainText);
+});
+document.getElementById('downloadBtn').addEventListener('click', ()=>{
+  if(!lastPlainText) return;
+  const blob = new Blob([lastPlainText], {type:'text/plain;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${lastTitle||'문서'}_${todayStr().replace(/\.\s?/g,'')}.txt`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+/* ===================== 트리 유틸 (웹하드 방식 폴더 CRUD) ===================== */
+function findNode(nodes, id){
+  for(const n of nodes){
+    if(n.id===id) return n;
+    if(n.children && n.children.length){ const r=findNode(n.children,id); if(r) return r; }
+  }
+  return null;
+}
+function removeNode(nodes, id){
+  const idx = nodes.findIndex(n=>n.id===id);
+  if(idx>=0){ nodes.splice(idx,1); return true; }
+  for(const n of nodes){
+    if(n.children && n.children.length && removeNode(n.children,id)) return true;
+  }
+  return false;
+}
+function treeRootsOf(kind){ return kind==='budget' ? budgetTree : otherWorkList; }
+
+function addFolder(parentId, kind){
+  const name = prompt('폴더(하위 항목) 이름을 입력하세요');
+  if(!name || !name.trim()) return;
+  const roots = treeRootsOf(kind);
+  const parent = findNode(roots, parentId);
+  if(!parent) return;
+  parent.children = parent.children || [];
+  const newNode = {id:'f'+Date.now()+Math.floor(Math.random()*1000), name:name.trim(), children:[]};
+  parent.children.push(newNode);
+  selectTreeNode(newNode.id, kind); /* 생성 즉시 새 폴더를 현재 범위로 선택 → 업무 바구니 드롭다운도 자동 동기화 */
+}
+function addRootFolder(kind){
+  const name = prompt('세부사업/기타업무와 동등한 레벨로 추가할 업무 범위 이름을 입력하세요');
+  if(!name || !name.trim()) return;
+  const roots = treeRootsOf(kind);
+  const newNode = {id:'r'+Date.now()+Math.floor(Math.random()*1000), name:name.trim(), children:[]};
+  roots.push(newNode);
+  selectTreeNode(newNode.id, kind);
+}
+document.getElementById('addBudgetRootBtn').addEventListener('click', ()=> addRootFolder('budget'));
+document.getElementById('addOtherRootBtn').addEventListener('click', ()=> addRootFolder('other'));
+
+function deleteFolder(id, kind){
+  if(!confirm('이 폴더(및 하위 항목)를 삭제하시겠습니까?')) return;
+  const roots = treeRootsOf(kind);
+  removeNode(roots, id);
+  if(state.selectedNodeId===id) selectScopeTab('CITY');
+  if(state.openAccordion===id) state.openAccordion=null;
+  refreshFileCategoryOptions();
+  refreshTreeAccordions();
+}
+
+/* ===================== 사업 진행 현황(타임라인) HTML ===================== */
+function timelineHtml(steps){
+  let html = '';
+  steps.forEach((s,i)=>{
+    const color = s.done ? '#2f7a4a' : (s.current ? 'var(--accent)' : '#98a0ab');
+    const dotBg = s.done ? '#2f7a4a' : (s.current ? 'var(--accent)' : '#d5d9df');
+    html += `<div class="pstep">
+      <div class="dotcol"><div class="dotc" style="background:${dotBg};"></div>${i<steps.length-1?'<div class="linec"></div>':''}</div>
+      <div class="pbody"><div class="plabel" style="color:${color};">${s.label}</div><div class="pdate">${s.date}</div></div>
+    </div>`;
+  });
+  return html;
+}
+let revealedTimelines = new Set();
+function renderAccordion(n){
+  let html = `<div class="accordion-panel">`;
+  if(n.timelineKey && TIMELINES[n.timelineKey]){
+    if(revealedTimelines.has(n.id)){
+      html += `<div class="acc-block acc-generated"><div class="acc-label">✨ 사업 진행 현황 <span class="acc-genned">AI 생성됨</span></div>` + timelineHtml(TIMELINES[n.timelineKey]) + `</div>`;
+    } else {
+      html += `<div class="acc-block"><div class="acc-label">사업 진행 현황</div><div class="acc-placeholder">💬 AI 업무비서에게 "이 사업에 대한 진행일정표(타임스케줄)를 짜주세요"라고 물어보면 여기에 자동으로 생성됩니다.</div></div>`;
+    }
+  }
+  const files = uploadedFiles.map((f,idx)=>({...f, idx})).filter(f=>f.category === n.name);
+  html += `<div class="acc-block"><div class="acc-label">자료 목록 (${files.length})</div>`;
+  if(files.length===0){
+    html += `<div class="file-empty-mini">첨부된 자료가 없습니다.</div>`;
+  } else {
+    files.forEach(f=>{
+      html += `<div class="file-row"><span class="fname">${f.isText?'📄':'📎'} ${f.name}</span><button data-idx="${f.idx}" class="rmFileBtnAcc">삭제</button></div>`;
+    });
+  }
+  html += `</div></div>`;
+  return html;
+}
+
+/* ===================== 트리 렌더 (재귀) ===================== */
+function renderTreeNodes(nodes, depth, kind){
+  return nodes.map(n=>{
+    const active = state.selectedNodeId === n.id;
+    const isOpen = state.openAccordion === n.id;
+    let extra = '';
+    if(n.amount) extra += `<span class="amt">${n.amount}</span>`;
+    if(n.status){ const sc = STATUS_COLOR[n.status] || {c:'#6b7280',bg:'#eceef1'}; extra += `<span class="badge2" style="color:${sc.c};background:${sc.bg};">${n.status}</span>`; }
+    const delBtn = kind==='other' ? `<span class="tn-del" data-del="${n.id}" data-kind="${kind}" title="삭제">×</span>` : '';
+    let html = `<div class="tree-row">
+      <div class="tree-node depth${Math.min(depth,3)} ${active?'active':''}" data-id="${n.id}" data-kind="${kind}">
+        <span class="lbl">${n.name}</span>${extra}
+        <span class="tn-add" data-add="${n.id}" data-kind="${kind}" title="하위 폴더 추가">＋</span>${delBtn}
+      </div>`;
+    if(isOpen) html += renderAccordion(n);
+    html += `</div>`;
+    if(n.children && n.children.length){
+      html += `<div class="tree-children">` + renderTreeNodes(n.children, depth+1, kind) + `</div>`;
+    }
+    return html;
+  }).join('');
+}
+function bindTreeEvents(box){
+  box.addEventListener('click', (e)=>{
+    const addId = e.target.dataset.add;
+    const delId = e.target.dataset.del;
+    const rmIdx = e.target.dataset.idx;
+    if(e.target.classList.contains('rmFileBtnAcc')){
+      uploadedFiles.splice(parseInt(rmIdx),1);
+      checkMasking(); refreshTreeAccordions();
+      return;
+    }
+    if(addId){ addFolder(addId, e.target.dataset.kind); return; }
+    if(delId){ deleteFolder(delId, e.target.dataset.kind); return; }
+    const row = e.target.closest('.tree-node');
+    if(row) selectTreeNode(row.dataset.id, row.dataset.kind);
+  });
+}
+function renderBudgetTree(){
+  const box = document.getElementById('budgetTree');
+  box.innerHTML = renderTreeNodes(budgetTree, 0, 'budget');
+}
+function renderOtherTree(){
+  const box = document.getElementById('otherTree');
+  box.innerHTML = renderTreeNodes(otherWorkList, 0, 'other');
+}
+/* 이벤트 위임 리스너는 최초 1회만 등록 (재렌더마다 등록하면 중복 등록되어 "열렸다 즉시 닫히는" 버그 발생) */
+bindTreeEvents(document.getElementById('budgetTree'));
+bindTreeEvents(document.getElementById('otherTree'));
+
+/* ===================== 스코프 / 노드 선택 ===================== */
+function findNodeInfo(id){
+  if(id==='CITY') return {label:'파주시 전체', scope:'CITY'};
+  if(id.startsWith('BUREAU:')) return {label:id.slice(7), scope:id};
+  if(id.startsWith('DEPT:')) return {label:id.slice(5), scope:id};
+  if(id.startsWith('TEAM:')) return {label:id.slice(5), scope:id};
+  const n = findNode(budgetTree, id) || findNode(otherWorkList, id);
+  if(n) return {label:n.name, scope:n.name, budget:n.amount, status:n.status};
+  return {label:'파주시 전체', scope:'CITY'};
+}
+function selectScopeTab(id){
+  state.selectedNodeId = id;
+  state.openAccordion = null;
+  renderAll();
+}
+function selectTreeNode(id, kind){
+  if(state.selectedNodeId===id && state.openAccordion===id){
+    state.openAccordion = null; // 다시 클릭하면 아코디언 닫기
+  } else {
+    state.selectedNodeId = id;
+    state.openAccordion = id;
+  }
+  renderAll();
+}
+function renderAll(){
+  renderScopeTabs();
+  renderFeatBar();
+  renderBudgetTree();
+  renderOtherTree();
+  renderCenter();
+  refreshFileCategoryOptions(); /* 현재 선택된 노드로 '업무 바구니 선택' 드롭다운을 항상 동기화 */
+}
+function resolveKind(id){
+  if(findNode(budgetTree, id)) return 'budget';
+  if(findNode(otherWorkList, id)) return 'other';
+  return null;
+}
+function renderScopeTabs(){
+  const bar = document.getElementById('scopeTabBar');
+  let html = SCOPE_TABS.map(t=>{
+    const active = state.selectedNodeId === t.id;
+    return `<div class="tab ${active?'active':''}" data-id="${t.id}"><span>${t.label}</span></div>`;
+  }).join('');
+  const fixedIds = SCOPE_TABS.map(t=>t.id);
+  if(!fixedIds.includes(state.selectedNodeId)){
+    const info = findNodeInfo(state.selectedNodeId);
+    let dot = '';
+    if(info.status){
+      const sc = STATUS_COLOR[info.status] || {c:'#6b7280',bg:'#eceef1'};
+      dot = `<span class="statusdot" style="background:${sc.c};"></span><span style="font-size:9.5px;color:${sc.c};font-weight:700;">${info.status}</span>`;
+    }
+    html += `<div class="tab-gap"></div><div class="tab active" data-id="${state.selectedNodeId}"><span>${info.label}</span>${dot}</div>`;
+  }
+  bar.innerHTML = html;
+  bar.querySelectorAll('.tab[data-id]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const id = el.dataset.id;
+      if(fixedIds.includes(id)) selectScopeTab(id);
+      else { const k = resolveKind(id); if(k) selectTreeNode(id, k); }
+    });
+  });
+}
+
+/* ===================== 기능바(featbar) / 모델 드롭다운 ===================== */
+function renderFeatBar(){
+  document.getElementById('featBtnLabel').textContent = FEATURES[state.feature].name;
+  document.getElementById('featBtn').firstChild.textContent = FEATURES[state.feature].icon + ' ';
+}
+function renderFeatDropdown(){
+  const dd = document.getElementById('featDropdown');
+  dd.innerHTML = Object.entries(FEATURES).map(([k,f])=>{
+    const active = k===state.feature;
+    return `<div class="feat-item ${active?'active':''}" data-key="${k}">
+      <span class="ic">${f.icon}</span>
+      <div><div class="fname">${f.name}</div><div class="fdesc">${f.desc}</div></div>
+      ${active?'<span class="fcheck">✓</span>':''}
+    </div>`;
+  }).join('');
+  dd.querySelectorAll('.feat-item').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      state.feature = el.dataset.key;
+      state.featOpen = false;
+      renderFeatBar(); renderFeatDropdown(); toggleDropdowns(); renderCenter();
+    });
+  });
+}
+function renderModelDropdown(){
+  const dd = document.getElementById('modelDropdown');
+  dd.innerHTML = '<div class="mhint">기능별로 목록이 달라집니다</div>' + MODEL_LIST.map(m=>{
+    const sel = m===state.model;
+    return `<div class="model-item ${sel?'sel':''}" data-m="${m}"><span>${m}</span>${sel?'<span>✓</span>':''}</div>`;
+  }).join('');
+  dd.querySelectorAll('.model-item').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      state.model = el.dataset.m;
+      state.modelOpen = false;
+      document.getElementById('modelLabel').textContent = state.model;
+      toggleDropdowns(); renderModelDropdown();
+    });
+  });
+}
+function toggleDropdowns(){
+  document.getElementById('featDropdown').classList.toggle('open', state.featOpen);
+  document.getElementById('modelDropdown').classList.toggle('open', state.modelOpen);
+}
+document.getElementById('featBtn').addEventListener('click', (e)=>{
+  e.stopPropagation();
+  state.featOpen = !state.featOpen; state.modelOpen = false;
+  renderFeatDropdown(); toggleDropdowns();
+});
+document.getElementById('modelChip').addEventListener('click', (e)=>{
+  e.stopPropagation();
+  state.modelOpen = !state.modelOpen; state.featOpen = false;
+  renderModelDropdown(); toggleDropdowns();
+});
+document.addEventListener('click', ()=>{
+  if(state.featOpen || state.modelOpen){ state.featOpen=false; state.modelOpen=false; toggleDropdowns(); }
+});
+
+/* ===================== 중앙 영역: 채팅 vs 준비중 ===================== */
+let chatMessages = [];
+
+function renderCenter(){
+  const inner = document.getElementById('centerInner');
+  const inputBar = document.getElementById('inputBar');
+  if(state.feature !== 'chat'){
+    inputBar.style.display = 'none';
+    const f = FEATURES[state.feature];
+    inner.innerHTML = `<div class="readybox">
+      <div class="ic">${f.icon}</div>
+      <h3>${f.name}</h3>
+      <p>${f.desc}<br>이 기능은 현재 프로토타입 시연 범위에 포함되지 않습니다.</p>
+      <span class="soon">준비중 · 다음 단계 로드맵 항목</span>
+    </div>`;
+    return;
+  }
+  inputBar.style.display = 'block';
+  const info = findNodeInfo(state.selectedNodeId);
+  let html = `<div class="chat-scopetag-wrap"><span class="chat-scopetag">'${info.label}' 범위로 한정된 대화입니다</span></div>`;
+  html += `<div class="chat-log" id="chatLog"></div>`;
+  inner.innerHTML = html;
+  renderChatLog();
+}
+
+function renderChatLog(){
+  const log = document.getElementById('chatLog');
+  if(!log) return;
+  if(chatMessages.length===0 && !state.chatThinking){
+    log.innerHTML = '<div class="chat-empty">궁금한 점을 입력해 보세요.</div>';
+    scrollChatToBottom();
+    return;
+  }
+  log.innerHTML = '';
+  chatMessages.forEach(m=>{
+    const div = document.createElement('div');
+    div.className = 'chat-msg ' + m.role;
+    div.textContent = m.text;
+    if(m.note){
+      const n = document.createElement('span');
+      n.className = 'note';
+      n.textContent = m.note;
+      div.appendChild(n);
+    }
+    log.appendChild(div);
+  });
+  if(state.chatThinking){
+    const div = document.createElement('div');
+    div.className = 'chat-msg ai thinking';
+    div.innerHTML = '<span class="think-dot"></span><span class="think-dot"></span><span class="think-dot"></span>';
+    log.appendChild(div);
+  }
+  scrollChatToBottom();
+}
+function scrollChatToBottom(){
+  /* 실제 스크롤 컨테이너는 .center-scroll(#centerScroll)이며, .chat-log 자체는 스크롤되지 않음 */
+  requestAnimationFrame(()=>{
+    const scroller = document.getElementById('centerScroll');
+    if(scroller) scroller.scrollTop = scroller.scrollHeight;
+  });
+}
+
+/* ===================== 파주시 AI 업무비서 — 약속대련(사전 시나리오) 질의응답 ===================== */
+const SCRIPTED_QA = [
+  {
+    keys: ["검토해야할 사항","검토해야 할 사항","사전에 검토","계속 시행하는데","이어 2026년에도"],
+    requireAny: ["01_", "04_", "06_", "예산서", "집행현황"],
+    requireLabel: "01_2026년_예산서.xls, 04_2025년_사업시행문(신청안내), 06_2025년_집행현황.xlsx",
+    a: `『노후 농업기계 미세먼지 저감대책 지원사업』은 2025년에 이어 2026년에도 계속 시행됩니다. 첨부해 주신 자료를 종합적으로 검토해 본 결과, 사전에 점검이 필요한 사항이 세 가지로 확인됩니다.
+
+1. 폐차업소 지정 현황
+   2025년에는 관내에 노후 농업기계 해체재활용업소가 없어 대동공업 신파주대리점 등 3곳을 한시적으로 임시 지정해 운영하셨습니다. 2026년 현재는 월롱면에 정식 지정된 업소가 1곳 확인됩니다. 최신 현황은 농촌진흥청 농사로에서 상시 확인하실 수 있습니다.
+   - https://www.nongsaro.go.kr/portal/ps/psx/psxu/fchDsmntlRuseBzmnAppnMain.ps?menuId=PS65495
+   관내 지정업소가 있으므로 2025년처럼 임시 지정 절차를 다시 밟기보다, 해당 업소를 우선 활용하고 처리 물량에 따라 인근 시·군 업소(예: 2025년 활용했던 양주 소재 업체)를 보조로 검토하시는 방향이 안전할 것 같습니다.
+
+2. 신청자 모집 방법
+   2025년에는 읍·면·동장, 농업인상담실장, 단위농협조합장, 폐차지정업소 대표를 통한 홍보로 진행되었습니다. 여기에 파주시 홈페이지 공고를 병행하시면 접근성이 높아질 것으로 보이며, 이는 사업시행지침에서 권장하는 홍보 방법(지자체 홈페이지 안내·게시판 공고·반상회보 게재)과도 일치합니다.
+
+3. 예산이 부족할 가능성이 있습니다
+   2025년 실적을 보면 신청 19건(트랙터 8 / 콤바인 11) 중 5건만 선정되어 선정률이 26.3%에 그쳤습니다. 그런데 2026년 예산은 22,000천원으로 전년(25,050천원)보다 오히려 3,050천원 줄어 있어, 신청 대비 예산 부족 문제가 더 심화될 가능성이 큽니다. 사전에 증액 필요성을 검토해 보시길 권해드립니다.
+
+각 항목에 대해 더 자세히 알고 싶으시면 "폐차업소는 임시지정인가요?", "참여자 모집 방법을 검토해 주세요", "예산이 부족한데 검토해 주세요"처럼 구체적으로 다시 물어봐 주세요.`
+  },
+  {
+    keys: ["신청기간","접수기간","언제까지","연간","스케줄","일정","타임라인","체크리스트"],
+    requireAny: ["07_"],
+    requireLabel: "07_2026년_사업시행문_노후_농업기계_미세먼지_저감대책_지원사업_신청_안내.pdf",
+    a: `『2026년 노후 농업기계 미세먼지 저감대책 지원사업』 타임라인을 표로 정리해 드립니다.
+
+■ 추진 일정표
+
+  날짜                       할 일
+  ─────────────────────────────────────────
+  2026. 3. 30.(월)           신청 접수 시작
+  2026. 4. 17.(금)           신청 접수 마감
+  2026. 4. 18. ~ 4월 말      대상자 확인 및 서류 심사 (생산연도 오래된 순 우선 선정)
+  2026. 5. ~ 10.             폐차 이행 및 보조금 지급 (입고확인서 → 폐차확인서 → 보조금 산정·지급)
+  회계연도 종료 후 1개월 이내   정산 및 결과보고서 제출
+
+■ 체크리스트
+☐ 신청서(면세유 공급보류 및 말소 신청서 포함) 1부
+☐ 소유자 신분증 사본 1부
+☐ 보조금 지급요청 통장 사본 1부
+☐ 대상 기계 6개월 이상 소유 여부 확인
+☐ 2012.12.31. 이전 생산 트랙터·콤바인 여부 확인
+
+「02_2026년 사업시행지침」의 절차와 「07_2026년 사업시행문」의 신청기간을 함께 반영해 정리했습니다.
+
+📌 좌측 '담당세부사업 / AI 업무 협업 범위'에서도 방금 만든 사업 진행 현황을 확인하실 수 있습니다.`,
+    revealsTimeline: true
+  },
+  {
+    keys: ["폐차업소","폐차 업체","임시지정","임시 지정","해체재활용","월롱면"],
+    requireAny: ["04_", "03_"],
+    requireLabel: "04_2025년_사업시행문(폐차 신청 안내), 03_2025년_사업시행지침",
+    a: `2025년에는 관내에 노후 농업기계 해체재활용업소가 없어 대동공업 신파주대리점 등 3곳을 한시적으로 임시 지정해 운영하셨습니다.
+
+2026년 현재는 월롱면에 정식 지정된 업소가 1곳 확인됩니다. 최신 현황은 농촌진흥청 농사로에서 상시 확인하실 수 있습니다.
+- https://www.nongsaro.go.kr/portal/ps/psx/psxu/fchDsmntlRuseBzmnAppnMain.ps?menuId=PS65495
+
+관내 지정업소가 있으므로 2025년처럼 임시 지정 절차를 다시 밟기보다, 해당 업소를 우선 활용하고 처리 물량에 따라 인근 시·군 업소(예: 2025년 활용했던 양주 소재 업체)를 보조로 검토하시는 방향이 안전할 것 같습니다.`
+  },
+  {
+    keys: ["참여자 모집","모집 방법","홈페이지 공고","공고 검토"],
+    requireAny: ["04_"],
+    requireLabel: "04_2025년_사업시행문(신청 안내)",
+    a: `참여자 모집(홈페이지 공고) 방법에 대해 검토해 드립니다.
+
+2025년에는 읍·면·동장, 농업인상담실장, 단위농협조합장, 폐차지정업소 대표를 통한 홍보로 진행되었습니다(04번 자료). 여기에 파주시 홈페이지 공고를 병행하시면 접근성이 높아질 것으로 보이며, 이는 사업시행지침에서 권장하는 홍보 방법(지자체 홈페이지 안내·게시판 공고·반상회보 게재)과도 일치합니다.
+
+2026년 공고 게재 여부는 신청 안내 문서가 확정되는 대로 다시 확인해 드리겠습니다.`
+  },
+  {
+    keys: ["예산부족","예산 부족","증액","신청자 대비","선정률"],
+    requireAny: ["06_", "01_", "집행현황", "예산서"],
+    requireLabel: "01_2026년_예산서.xls, 06_2025년_집행현황.xlsx",
+    a: `2025년 집행현황(06번 자료) 대비 2026년 예산 편성을 검토해 드립니다.
+
+■ 2025년 집행실적 (연말 기준)
+- 신청 19건(트랙터 8 / 콤바인 11) 대비 선정 5건(트랙터 2 / 콤바인 3)
+- 선정률 약 26.3%로, 신청자 다수가 예산 부족으로 지원받지 못했습니다.
+
+■ 2026년 예산 (01_예산서.xls)
+- 노후 농업기계 미세먼지 저감 대책 지원 : 22,000천원 (국비 11,000 / 도비 3,300 / 시비 7,700)
+- 전년도(25,050천원) 대비 오히려 3,050천원 감액 편성
+
+2025년 낮은 선정률(26.3%)을 감안하면 2026년 수요는 유사하거나 더 늘어날 가능성이 있어, 추경 등을 통한 예산 증액 검토가 필요해 보입니다. 다만 최종 판단은 예산부서 협의가 필요한 사항입니다.`
+  },
+  {
+    keys: ["검색엔진","보도자료","인터넷 연결","외부 연결","실시간 검색"],
+    requireAny: ["07_"],
+    requireLabel: "07_2026년_사업시행문",
+    a: `실시간 검색엔진 연결(외부 인터넷)은 보안상(공공기관 폐쇄망 특성) 지원되지 않지만, 첨부해 주신 「07_2026년 사업시행문」 등 자료를 바탕으로 보도자료 초안을 작성해 드렸습니다.
+
+우측 '보고서 변환'에서 [보도자료] 버튼을 눌러 확인해 주세요. 제목·리드문·본문·담당부서 연락처까지 실제 배포 양식에 맞춰 구성했습니다.
+
+추가로 반영할 최신 통계나 타 시·군 사례가 있으면 자료를 첨부해 주시면 다음 초안에 반영해 드리겠습니다.`
+  },
+  {
+    keys: ["쪽지보고"],
+    requireAny: ["07_"],
+    requireLabel: "07_2026년_사업시행문",
+    a: `노후 농업기계 미세먼지 저감 대책 지원사업 쪽지보고 초안을 안내해 드립니다.
+
+□ 개요
+  ○ 2026년 노후 경유 농업기계(트랙터·콤바인) 조기폐차 지원사업 신청 접수 (3.30.~4.17.)
+  ○ 예산 22,000천원(국비 11,000 / 도비 3,300 / 시비 7,700), 전년 대비 3,050천원 감액
+□ 현재 추진현황
+  ○ 신청 접수 진행 중이며, 관내 폐차 지정업소 1개소(월롱면 소재)가 운영 중
+□ (예상)건의사항
+  ○ 2025년 선정률 26.3%로 신청 대비 예산 부족 → 증액 검토 필요
+  ○ 관내 폐차 지정업소(월롱면 소재 1개소)로 처리물량 집중 우려
+
+정식 서식으로 받으시려면 우측 '보고서 변환'의 [쪽지보고] 버튼을 눌러 주세요. 이 채팅 답변은 요약형 안내입니다.`
+  },
+  {
+    keys: ["법제처","조례제정 현황","전국 시군구","조례 제정 현황"],
+    requireAny: ["08_", "09_", "부서의견조회", "별표"],
+    requireLabel: "08_[부서의견조회] 조례안, 09_[별표 2]",
+    a: function(){
+      let body = `법제처 홈페이지에 실시간 접속하여 전국 시·군·구 조례 제정 현황을 자동으로 분석하는 것은 보안상 이 화면에서 지원되지 않습니다. 필요하신 경우 담당자께서 국가법령정보센터·자치법규정보시스템에 직접 접속해 확인해 주시기 바랍니다.
+
+대신 업로드하신 「08_[부서의견조회] 조례안」 자료를 바탕으로 조례안 개요를 정리해 드립니다.
+
+■ 의원발의 조례안 개요
+- 안건명 : 「파주시 노후 농기계 조기 폐기 지원 조례안」(제정) (○○○ 의원 발의, 2026. 2. 12.)
+- 제안이유 : 노후 경유 농기계로 인한 미세먼지·온실가스 배출 저감 및 안전사고 위험 완화를 위한 재정 지원 근거 마련
+- 주요내용 : 시장의 책무(안 제3조) / 연차별 지원계획 수립·시행(안 제5조) / 지원 대상 규정(안 제6조) / 보조금 지원 및 제한(안 제7·8조) / 지정 폐기업소 관리(안 제9조)
+
+■ 조례 제정 타임라인 (별표2 기준)
+입법안 작성 → 초안심사(법제부서) → 입법계획수립(시장 결재) → 의견조회 및 반영 → 입법예고(20일 이상) → 본심사 → 조례·규칙심의회 심의 → 심의결과 반영 → 최종결재(시장) → 시의회 제출 → 심의·의결 → 이송·접수 → 공포 전 보고(경기도) → 공포
+
+■ 소관부서 검토의견 (00_소관부서 검토결과 반영)
+소관부서(복지정책과)는 이 조례안에 대해 "수정동의" 의견을 제시했습니다. 핵심은 제7조(보조금 지원 등)에 제⑤항을 신설해, 신청이 예산을 초과할 경우 1) 생산연도가 오래된 순, 2) 그 밖에 시장이 정하는 객관적 기준(연령·경지면적 등) 순으로 우선 지원하도록 한 부분입니다. 2025년 선정률이 26.3%에 그쳤던 점을 감안하면, 이런 우선순위 규정이 있어야 형평성 논란을 줄일 수 있다는 취지로 보입니다. 농업기술센터 업무와 연계한 실효성 있는 지원체계 구축에도 동의하는 의견입니다.
+
+■ 검토사항 (5개 항목 모두 해당 없음)
+- 관련법령 위반 사항, 조례·규칙 위반 사항, 월권·공익저해 사항, 상급기관 지시불이행 사항, 그 밖의 문제점 — 5개 항목 전부 문제 없음으로 확인되었습니다.
+
+■ 비용추계
+- 산출내역 : 2,500,000원 × 175대 = 437,500천원 (2026~2030년 5개년 합계)
+- 연차별 : 2026년 62,500 / 2027년 75,000 / 2028년 87,500 / 2029년 100,000 / 2030년 112,500천원
+- 재원조달 : 시비 100%`;
+      return body;
+    }
+  },
+  {
+    keys: ["검토의견","부서검토의견","수정동의"],
+    requireAny: ["00_", "검토결과"],
+    requireLabel: "00_소관부서 검토결과",
+    a: `앞서 안내드린 조례안 개요에 이어, 첨부하신 「00_소관부서 검토결과」를 반영해 소관부서 검토의견을 정리해 드립니다.
+
+■ 소관부서 검토결과
+- 자치법규명 : 「파주시 노후 농기계 조기 폐기 지원 조례안」(제정)
+- 소관부서 : 복지정책과(맞춤형복지지원팀)
+- 검토의견 : 조례 개정 수정동의
+
+■ 검토사항 (5개 항목 모두 해당 없음)
+- 관련법령 위반 사항 : 없음
+- 조례 또는 규칙 위반 사항 : 없음
+- 월권사항 또는 공익 저해 사항 : 없음
+- 상급기관 훈령 등 지시불이행 사항 : 없음
+- 그 밖의 문제점 : 없음
+
+■ 주요 수정 사항
+- 제7조(보조금 지원 등)에 제⑤항 신설
+  "노후 농기계 조기 폐기 신청이 예산을 초과하는 경우 1) 생산연도가 오래된 순, 2) 그 밖에 시장이 정하는 객관적 기준(연령, 경지면적 등) 순으로 우선 지원"
+- 사유 : 신청 초과 시 선정 기준이 불명확했던 문제(2025년 선정률 26.3%로 다수 미선정)를 해결하고 형평성 논란을 최소화하기 위함
+
+■ 비용추계
+- 산출내역 : 2,500,000원 × 175대 = 437,500천원 (2026~2030년 5개년 합계)
+- 연차별 : 2026년 62,500 / 2027년 75,000 / 2028년 87,500 / 2029년 100,000 / 2030년 112,500천원 (총 사업량 175세대, 재원 시비 100%)
+
+담당 부서는 농업기술센터(도시산업위원회 소관) 업무와 연계한 실효성 있는 지원체계 구축에 동의하는 취지로 수정동의 의견을 제시했습니다.`
+  },
+  {
+    keys: ["조례 제정 타임라인","별표 2","제정·개정·폐지","제정 절차"],
+    requireAny: ["09_", "별표"],
+    requireLabel: "09_[별표 2] 제정·개정·폐지 세부처리절차",
+    a: `업로드하신 「09_[별표 2] 제정·개정·폐지 세부처리절차」를 반영한 조례 제정 타임라인입니다.
+
+1. 입법안 작성 (입안부서)
+2. 초안심사 (법제부서 : 조문형식·법규용어 등 심사)
+3. 입법계획수립(방침결재) — 시장 결재
+4. 의견조회 및 의견반영 (규제영향분석·부패영향평가·성별영향평가 등)
+5. 입법예고 및 의견반영 (20일 이상 시보 게재)
+6. 본심사 (법제부서)
+7. 조례·규칙심의회 심의
+8. 심의결과 통보 및 반영
+9. 입법안 최종결재 (시장 결재)
+10. 조례안 시의회 제출
+11. 시의회 심의·의결
+12. 조례안 이송·접수 (의결일로부터 5일 이내)
+13. (이의 시) 재의요구 → 11번으로 회귀
+14. 공포 전 보고 (경기도 법제부서, 이송일로부터 5일 이내)
+15. 공포 결재 → 공포번호 부여 → 공포 알림
+
+☐ 체크리스트 : 규제영향분석 필요 여부 확인 / 입법예고 20일 확보 / 조례·규칙심의회 일정 조율 / 시의회 상임위 제안설명 준비
+
+📌 좌측 '담당세부사업 / AI 업무 협업 범위'의 현재 폴더에도 방금 만든 사업 진행 현황을 확인하실 수 있습니다.`,
+    revealsTimeline: true,
+    timelineKeyToAssign: 'ordinance'
+  },
+  {
+    keys: ["예산","사업비","얼마","금액"],
+    requireAny: ["01_", "예산서"],
+    requireLabel: "01_2026년_예산서.xls",
+    a: `기술보급과 2026년도 세부사업 예산 현황을 안내해 드립니다 (단위: 천원).
+
+- 농기계 임대사업소 운영 : 649,680  (국비 14,000 / 도비 4,200 / 시비 631,480)  전년 대비 △36,258
+- 농업기계 안전교육 지원 : 6,000  (국비 3,000 / 도비 900 / 시비 2,100)  전년과 동일
+- 노후 농업기계 미세먼지 저감 대책 지원 : 22,000  (국비 11,000 / 도비 3,300 / 시비 7,700)  전년 대비 △3,050
+
+업로드하신 「01_2026년_예산서.xls」 기준으로 집계했습니다.`
+  },
+  {
+    keys: ["법률검토","법령조회","xlaw"],
+    requireAny: ["08_", "09_"],
+    requireLabel: "08_[부서의견조회] 조례안, 09_[별표 2]",
+    a: `법령 조회 시스템 기능을 통해 관련 법령·조례를 확인했습니다. 「미세먼지 저감 및 관리에 관한 특별법」 제3조(국가와 지방자치단체의 책무), 「농업기계화 촉진법 시행규칙」 제17조(사후관리업자의 시설 및 기술인력 기준)가 본 사업의 근거 법령으로 확인됩니다. 자세한 조문은 좌측 상단 기능 선택에서 '법령 조회 시스템'을 눌러 별도로 질의해 주세요. (현재 프로토타입에서는 ChatAgent 창에서 간이 안내만 제공합니다.)`
+  }
+];
+
+const EXTERNAL_LINK_WORDS = ["검색엔진","법제처 홈페이지","인터넷 연결","외부 연결","웹 크롤링","크롤링","실시간 검색","홈페이지에서"];
+function isExternalLinkRequest(q){ return EXTERNAL_LINK_WORDS.some(w=>q.includes(w)); }
+
+const STOPWORDS = ['얼마','언제','누구','어디','뭐','무엇','있어','있나요','인가요','까지','인지','알려줘','알려주세요','해줘','좀','안내'];
+
+function findScripted(q){
+  let best = null, bestScore = 0;
+  SCRIPTED_QA.forEach(item=>{
+    /* 매칭 개수가 아니라 매칭된 키워드 글자수 합으로 점수 계산 — 더 구체적인(긴) 키워드를 우선시하여
+       "타임라인/일정/스케줄" 같은 범용 키워드로 인한 오매칭을 방지 */
+    const score = item.keys.reduce((s,k)=> s + (q.includes(k)?k.length:0), 0);
+    if(score > bestScore){ bestScore = score; best = item; }
+  });
+  return bestScore > 0 ? best : null;
+}
+function filesReadyFor(item){
+  if(!item.requireAny || item.requireAny.length === 0) return true;
+  return uploadedFiles.some(f => item.requireAny.some(kw => f.name.includes(kw)));
+}
+function fallbackSearch(q, scope){
+  const accText = maskPII(getAccumulatedText(scope)).trim();
+  if(!accText) return null;
+  const lines = accText.split('\n').map(l=>l.trim()).filter(Boolean);
+  const keywords = q.replace(/[?!.,]/g,'').split(/\s+/).filter(w=>w.length>1 && !STOPWORDS.includes(w));
+  if(keywords.length===0) return null;
+  const scored = lines.map(l=>{
+    const score = keywords.reduce((s,k)=> s + (l.includes(k)?1:0), 0);
+    return {l, score};
+  }).filter(x=>x.score>0).sort((a,b)=>b.score-a.score);
+  if(scored.length===0) return null;
+  return scored.slice(0,3).map(x=>'· '+x.l.replace(/^[-•○]\s*/,'')).join('\n');
+}
+
+function answerQuestion(q){
+  const info = findNodeInfo(state.selectedNodeId);
+  const scope = info.scope;
+  const scopeLabel = info.label;
+  const hit = findScripted(q);
+
+  if(hit){
+    if(!filesReadyFor(hit)){
+      return {
+        text: `이 질문에 답변드리려면 관련 자료가 먼저 첨부되어야 합니다.\n\n필요 자료 : ${hit.requireLabel}\n\n좌측 '① 업무 자료 담기'에서 해당 파일을 업로드하신 뒤 다시 질문해 주세요.`,
+        note: "※ 자료 미첨부 상태입니다 (자료 있어야 답한다 원칙). 실제 서비스에서는 관련 자료 유무를 AI가 자동 판별합니다."
+      };
+    }
+    const text = (typeof hit.a === 'function') ? hit.a() : hit.a;
+    if(hit.revealsTimeline){
+      const node = findNode(budgetTree, state.selectedNodeId) || findNode(otherWorkList, state.selectedNodeId);
+      if(node){
+        if(hit.timelineKeyToAssign && !node.timelineKey){
+          node.timelineKey = hit.timelineKeyToAssign; /* 사용자가 만든 하위폴더에도 사업 진행 현황을 새로 배정 */
+        }
+        if(node.timelineKey){
+          revealedTimelines.add(node.id);
+          state.openAccordion = node.id;
+        }
+      }
+    }
+    return { text, note: `※ 사전에 준비된 답변입니다 (질문 범위: ${scopeLabel}). 실제 서비스에서는 업로드된 자료를 바탕으로 AI가 실시간 생성합니다.` };
+  }
+
+  if(isExternalLinkRequest(q)){
+    return {
+      text: `보안상(공공기관 폐쇄망 특성) 검색엔진·법제처 홈페이지 등 외부 사이트에 직접 연결하는 것은 이 화면에서 지원되지 않습니다.\n\n대신 좌측에 첨부하신 자료를 바탕으로 초안을 작성해 드릴 수 있습니다. 관련 자료를 첨부하신 뒤 다시 질문해 주시거나, 우측 '보고서 변환'의 출력 버튼을 활용해 주세요.`,
+      note: "※ 심사기준표의 '보안·개인정보 제약' 원칙에 따른 응대입니다."
+    };
+  }
+
+  const fb = fallbackSearch(q, scope);
+  if(fb){
+    return { text: `등록된 시나리오 질문은 아니지만, "${scopeLabel}" 범위 자료에서 관련 문장을 찾았습니다.\n\n${fb}`, note: "※ 규칙기반 키워드 검색 결과입니다." };
+  }
+  const examples = SCRIPTED_QA.map(x=>x.keys[0]).join(' / ');
+  return { text: `이 프로토타입은 사전 등록된 질문 예시에 한해 답변을 준비해 두었습니다.\n등록된 질문 예시: ${examples}`, note: "※ 실제 서비스에서는 등록되지 않은 질문도 AI가 답변합니다." };
+}
+
+/* ===================== 채팅 입력 ===================== */
+const chatInputEl = document.getElementById('chatInput');
+function autoResizeChatInput(){
+  chatInputEl.style.height = 'auto';
+  chatInputEl.style.height = Math.min(chatInputEl.scrollHeight, 160) + 'px';
+}
+chatInputEl.addEventListener('input', autoResizeChatInput);
+
+function sendChat(q){
+  const text = (q!==undefined ? q : chatInputEl.value).trim();
+  if(!text) return;
+  chatMessages.push({role:'user', text});
+  chatInputEl.value = '';
+  autoResizeChatInput();
+  state.chatThinking = true;
+  renderChatLog();
+  const delay = 650 + Math.floor(Math.random()*750); /* 즉답 대신 잠깐 "생각 중" 표시 */
+  setTimeout(()=>{
+    const ans = answerQuestion(text);
+    state.chatThinking = false;
+    chatMessages.push({role:'ai', text:ans.text, note:ans.note});
+    renderChatLog();
+    refreshTreeAccordions(); /* 사업 진행 현황이 방금 생성됐을 수 있으므로 사이드바도 갱신 */
+    chatInputEl.focus();
+  }, delay);
+}
+document.getElementById('chatSendBtn').addEventListener('click', ()=> sendChat());
+chatInputEl.addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); sendChat(); }
+});
+
+/* ===================== 초기화 ===================== */
+renderOtherTree();
+renderScopeTabs();
+renderFeatBar();
+renderCenter();
+</script>
+</body>
+</html>
